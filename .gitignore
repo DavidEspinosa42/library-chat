@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Builds
+dist/
+build/
+*.tsbuildinfo
+
+# Environment — secrets never committed
+.env
+.env.*
+!.env.example
+
+# Test & coverage artifacts
+coverage/
+playwright-report/
+test-results/
+
+# Eval run outputs (timestamped JSON, machine-generated)
+evals/results/
+
+# Local tooling config
+.claude/settings.local.json
+
+# Logs & OS noise
+*.log
+.DS_Store
+Thumbs.db
+
+# Terraform local state (plan/validate only — never applied, state stays local)
+infra/terraform/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
