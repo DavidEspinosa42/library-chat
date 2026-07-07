@@ -16,7 +16,7 @@
 - [x] `docs/05-phases.md` — this file
 - [x] `docs/06-conventions.md`
 - [x] `CLAUDE.md` (pointer + core rules)
-- [ ] **Commit**: `docs: project design docs and working agreements`
+- [x] **Commit**: `docs: project design docs and working agreements`
 
 ## Phase 0 — Workspace + foundational DB
 
@@ -24,19 +24,19 @@ Install: typescript 5.9.3 · tsx · @types/node · eslint 10 + prettier · fasti
 fastify-type-provider-zod 7 · zod 4.4.3 · @fastify/helmet · @fastify/cors · dotenv ·
 drizzle-orm 0.45.2 · drizzle-kit 0.31.10 · postgres 3.4.9 · pino-pretty (dev)
 
-- [ ] pnpm workspace (`apps/*`, `packages/*`), root strict tsconfig, `"type":"module"`, `engines: node >=24`, ESLint flat + Prettier
-- [ ] `packages/shared` skeleton (Zod contracts package, consumed as TS source)
-- [ ] `apps/api/src/config/env.ts` — Zod-validated, single config entry point; `.env.example` in sync
-- [ ] `docker-compose.yml` with `db` service (`pgvector/pgvector:pg17`) + init of `app` and `test` databases
-- [ ] Full Drizzle schema (users, documents, chunks, chat_sessions, messages, extractions per `03`)
-- [ ] Custom migration `CREATE EXTENSION IF NOT EXISTS vector` + generated migration — inspect the SQL
-- [ ] Fastify app: helmet, cors, error-envelope handler, `GET /healthz` with DB ping
+- [x] pnpm workspace (`apps/*`, `packages/*`), root strict tsconfig, `"type":"module"`, `engines: node >=24`, ESLint flat + Prettier
+- [x] `packages/shared` skeleton (Zod contracts package, consumed as TS source)
+- [x] `apps/api/src/config/env.ts` — Zod-validated, single config entry point; `.env.example` in sync
+- [x] `docker-compose.yml` with `db` service (`pgvector/pgvector:pg17`) + init of `app` and `test` databases
+- [x] Full Drizzle schema (users, documents, chunks, chat_sessions, messages, extractions per `03`)
+- [x] Custom migration `CREATE EXTENSION IF NOT EXISTS vector` + generated migration — inspect the SQL
+- [x] Fastify app: helmet, cors, error-envelope handler, `GET /healthz` with DB ping
 
 Verify:
-- [ ] `pnpm typecheck` green
-- [ ] `docker compose up db` + `pnpm db:migrate` applies cleanly
-- [ ] `curl localhost:3000/healthz` → `{ status: "ok", db: "up" }`
-- [ ] **Commit**: `feat: workspace, config, schema and healthz`
+- [x] `pnpm typecheck` green
+- [x] `docker compose up db` + `pnpm db:migrate` applies cleanly
+- [x] `curl localhost:3000/healthz` → `{ status: "ok", db: "up" }`
+- [x] **Commit**: `feat: workspace, config, schema and healthz`
 
 ## Phase 1 — Auth + library + multi-format async ingestion
 
