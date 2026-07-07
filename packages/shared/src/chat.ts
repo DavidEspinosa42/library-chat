@@ -51,3 +51,20 @@ export const messageDtoSchema = z.object({
   createdAt: z.iso.datetime(),
 });
 export type MessageDto = z.infer<typeof messageDtoSchema>;
+
+/** Conversation list item — titles power the "Conversations ▾" dropdown. */
+export const sessionListItemSchema = sessionDtoSchema.extend({
+  documentTitles: z.array(z.string()),
+  messageCount: z.number().int(),
+  lastMessageAt: z.iso.datetime().nullable(),
+});
+export type SessionListItem = z.infer<typeof sessionListItemSchema>;
+
+export const sessionsListResponseSchema = z.object({
+  sessions: z.array(sessionListItemSchema),
+});
+
+export const sessionDetailResponseSchema = z.object({
+  session: sessionListItemSchema,
+  messages: z.array(messageDtoSchema),
+});

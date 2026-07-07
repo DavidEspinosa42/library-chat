@@ -45,7 +45,7 @@ const envSchema = z
     AGENT_MAX_TOOL_CALLS: z.coerce.number().int().min(1).default(4),
     RETRIEVAL_TOP_K: z.coerce.number().int().min(1).default(8),
     MAX_TOKENS_CHAT: z.coerce.number().int().default(2_048),
-    MAX_TOKENS_EXTRACTION: z.coerce.number().int().default(2_048),
+    MAX_TOKENS_EXTRACTION: z.coerce.number().int().default(4_096),
 
     MAX_FILE_MB: z.coerce.number().default(25),
     MAX_FILES_PER_UPLOAD: z.coerce.number().int().default(10),

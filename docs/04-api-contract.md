@@ -105,7 +105,7 @@ Errors before the stream starts use the normal envelope: `NOT_FOUND` (unknown se
 | `token` | `{ delta: string }` | Assistant text, token-by-token |
 | `tool_call` | `{ name: "search_chunks", query: string, documentId?: string }` | Drives the "thinking…" UI state |
 | `citations` | `{ citations: [{ n, chunkId, documentId, documentTitle, location, snippet }], invalidCitations: number }` | After post-processing; UI renders chips, `invalidCitations > 0` renders a caution note |
-| `done` | `{ messageId, usage: { inputTokens, outputTokens }, elapsedMs }` | Terminal event; usage powers cost transparency in the UI |
+| `done` | `{ messageId, content, usage: { inputTokens, outputTokens }, elapsedMs }` | Terminal event. `content` is the authoritative post-processed text (invalid markers stripped, templates enforced) — the client swaps its accumulated tokens for it |
 | `error` | `{ code, message }` | Terminal event on mid-stream failure; UI offers retry |
 
 Keep-alive: comment lines (`: ping`) every 15s while the agent works — relevant to the

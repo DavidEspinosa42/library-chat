@@ -10,6 +10,7 @@ import { env } from "../../config/env.js";
  */
 
 let chatModelPromise: Promise<BaseChatModel> | undefined;
+let extractionModelPromise: Promise<BaseChatModel> | undefined;
 
 export function getChatModel(): Promise<BaseChatModel> {
   if (env.TEST_MODE) {
@@ -20,6 +21,19 @@ export function getChatModel(): Promise<BaseChatModel> {
     maxTokens: env.MAX_TOKENS_CHAT,
   });
   return chatModelPromise;
+}
+
+/**
+ * Extraction model, or null in TEST_MODE — structured output can't be usefully
+ * scripted through fakeModel, so the extraction job produces a deterministic
+ * card offline instead (see ai/extraction/extract.ts).
+ */
+export function getExtractionModel(): Promise<BaseChatModel> | null {
+  if (env.TEST_MODE) return null;
+  extractionModelPromise ??= initChatModel(env.EXTRACTION_MODEL, {
+    maxTokens: env.MAX_TOKENS_EXTRACTION,
+  });
+  return extractionModelPromise;
 }
 
 /**

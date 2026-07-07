@@ -67,19 +67,19 @@ Verify:
 Verify:
 - [x] curl vs LIVE providers: cited answer from the right book/chapter · 2-book comparison → markdown table + 11 valid citations from both · no-evidence & out-of-scope → exact templates (0 invalid citations across all runs). Live fix: `EMBED_GROUP_MAX_TOKENS` 28k (voyage-context-4 window = 32k per group)
 - [x] smoke vitest with `fakeModel()` (scripted tool_call → answer) — 7 tests green
-- [ ] **Commit**: `feat: AI core with versioned prompts, agent and citation validation`
+- [x] **Commit**: `feat: AI core with versioned prompts, agent and citation validation`
 
 ## Phase 3 — SSE + conversations + non-blocking extraction
 
-- [ ] `POST /chat` → SSE over `reply.raw` (`token`, `tool_call`, `citations`, `done` with usage+elapsed, `error`; 15s keep-alive comments) via `agent.stream(streamMode:"messages")`
-- [ ] Conversation endpoints: `GET /chat/sessions` (list: titles, counts, lastMessageAt) + `GET /chat/sessions/:id` (session + messages); `POST /chat` takes `sessionId`
-- [ ] Extraction job (non-blocking, after `ready`): `withStructuredOutput(documentCardSchema)` on capped excerpt → `extractions` row (payload | error); prompt versioned in registry
-- [ ] `GET /documents/:id` includes extraction; `GET /documents` includes `extractionStatus`
+- [x] `POST /chat` → SSE over `reply.raw` (`token`, `tool_call`, `citations`, `done` with authoritative content+usage+elapsed, `error`; 15s keep-alive; CORS headers set manually on the hijacked reply) via `agent.stream(streamMode:"messages")`
+- [x] Conversation endpoints: `GET /chat/sessions` (list: titles, counts, lastMessageAt) + `GET /chat/sessions/:id` (session + messages); `POST /chat` takes `sessionId`
+- [x] Extraction job (non-blocking, after `ready`) on capped excerpt → `extractions` row (payload | error); prompt versioned in registry. **Live finding**: `withStructuredOutput` through the universal model fell back to a broken text parser → explicit JSON-only prompt + manual parse + Zod validation at the boundary; LLM-overflowable array maxima are clamped, not rejected; `MAX_TOKENS_EXTRACTION` → 4096
+- [x] `GET /documents/:id` includes extraction; `GET /documents` includes `extractionStatus`
 
 Verify:
-- [ ] `curl -N`: token deltas + tool_call + citations + done(usage) events visible
-- [ ] Zod-valid cards for all 5 books, each with 3–5 starter questions
-- [ ] Conversation list/get endpoints return continuing-capable history
+- [x] `curl -N` vs live model: 21 token deltas + tool_call (model even narrowed by documentId) + citations + done(content+usage) events
+- [x] Zod-valid cards for all 5 books (real titles/authors/docType, 3–5 starter questions, themes clamped to 8)
+- [x] Conversation list (ordered by last activity, titled by sources) + detail with citation-bearing history
 - [ ] **Commit**: `feat: SSE streaming, conversation history and document cards`
 
 ## Phase 4 — Frontend SPA (/login · /library · /chat)
