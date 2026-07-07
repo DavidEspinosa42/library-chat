@@ -43,17 +43,17 @@ Verify:
 Install: @fastify/jwt · @fastify/cookie · bcryptjs · @fastify/multipart · unpdf ·
 @lingo-reader/epub-parser · @lingo-reader/mobi-parser (.azw3/KF8) · p-queue · js-tiktoken · voyageai
 
-- [ ] Auth: register/login/logout, bcryptjs, JWT httpOnly cookie, auth guard on `/api/v1/*` (except auth/healthz)
-- [ ] `POST /documents`: multipart multi-file + JSON paste; whitelist/size/count limits per `01` (error envelope codes per `04`)
-- [ ] `GET /documents`, `GET /documents/:id`
-- [ ] Parsers with common `ParsedDocument` interface: pdf, text (txt/md), epub, azw3 — verify lingo-reader API on install
-- [ ] Chunker: structure-aware, ~400 tokens / 15% overlap, heading trail → `location`
-- [ ] Voyage adapter (`embedChunkGroups` / `embedQuery`, contextualized endpoint, `enable_auto_chunking:false`, backoff+jitter) + deterministic fake behind the same factory (`TEST_MODE`)
-- [ ] Worker: p-queue (`QUEUE_CONCURRENCY=2`), idempotent, parse → cap → chunk → embed (section groups ≤ `EMBED_GROUP_MAX_TOKENS`) → batch insert → `ready`/`failed`
+- [x] Auth: register/login/logout, bcryptjs, JWT httpOnly cookie, auth guard on `/api/v1/*` (except auth/healthz)
+- [x] `POST /documents`: multipart multi-file + JSON paste; whitelist/size/count limits per `01` (error envelope codes per `04`)
+- [x] `GET /documents`, `GET /documents/:id`
+- [x] Parsers with common `ParsedDocument` interface: pdf, text (txt/md), epub, azw3 — verify lingo-reader API on install
+- [x] Chunker: structure-aware, ~400 tokens / 15% overlap, heading trail → `location` (incl. roman-numeral chapter headings)
+- [x] Voyage adapter (`embedChunkGroups` / `embedQuery`, contextualized endpoint, `enable_auto_chunking:false`, backoff+jitter) + deterministic fake behind the same factory (`TEST_MODE`)
+- [x] Worker: p-queue (`QUEUE_CONCURRENCY=2`), idempotent, parse (magic-byte sniff + 60s timeout) → cap → chunk → embed (section groups ≤ `EMBED_GROUP_MAX_TOKENS`) → batch insert → `ready`/`failed`
 
 Verify:
-- [ ] curl flow: register → login → upload **all 5 seed books** → poll to `ready` (all 5)
-- [ ] chunks with `location` present in psql; 401 without cookie; corrupt file → `failed` + message
+- [x] curl flow: register → login → upload **all 5 seed books** → poll to `ready` (all 5, ~9s with fake embeddings)
+- [x] chunks with `location` present in psql; 401 without cookie; corrupt file → `failed` + message; unsupported format → 415 envelope; paste → ready
 - [ ] **Commit**: `feat: auth, documents and multi-format ingestion pipeline`
 
 ## Phase 2 — AI core: prompt/ · llm/ · postprocess/ + chat (JSON)

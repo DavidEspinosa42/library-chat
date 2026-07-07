@@ -1,6 +1,9 @@
+import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
-import Fastify, { type FastifyError } from "fastify";
+import jwt from "@fastify/jwt";
+import multipart from "@fastify/multipart";
+import Fastify, { type FastifyError, type FastifyRequest } from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,
   serializerCompiler,
@@ -10,6 +13,8 @@ import {
 import { env } from "./config/env.js";
 import { sql } from "./db/client.js";
 import { AppError } from "./lib/errors.js";
+import { authRoutes } from "./modules/auth/routes.js";
+import { documentRoutes } from "./modules/documents/routes.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -33,6 +38,26 @@ export async function buildApp() {
 
   await app.register(helmet);
   await app.register(cors, { origin: env.WEB_ORIGIN, credentials: true });
+  await app.register(cookie);
+  await app.register(jwt, {
+    secret: env.JWT_SECRET,
+    cookie: { cookieName: "token", signed: false },
+  });
+  await app.register(multipart, {
+    limits: {
+      fileSize: env.MAX_FILE_MB * 1024 * 1024,
+      files: env.MAX_FILES_PER_UPLOAD,
+      fields: 5,
+    },
+  });
+
+  app.decorate("authenticate", async (req: FastifyRequest) => {
+    try {
+      await req.jwtVerify();
+    } catch {
+      throw new AppError("UNAUTHORIZED", "Authentication required.");
+    }
+  });
 
   // Every error leaves through the envelope (docs/04).
   app.setErrorHandler((err: FastifyError, _req, reply) => {
@@ -65,6 +90,9 @@ export async function buildApp() {
       return reply.status(503).send({ status: "degraded", db: "down" });
     }
   });
+
+  await app.register(authRoutes, { prefix: "/api/v1/auth" });
+  await app.register(documentRoutes, { prefix: "/api/v1" });
 
   return app;
 }

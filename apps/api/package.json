@@ -11,14 +11,24 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@fastify/cookie": "11.0.2",
     "@fastify/cors": "11.2.0",
     "@fastify/helmet": "13.0.2",
+    "@fastify/jwt": "10.1.0",
+    "@fastify/multipart": "10.0.0",
     "@library-chat/shared": "workspace:*",
+    "@lingo-reader/epub-parser": "0.4.6",
+    "@lingo-reader/mobi-parser": "0.4.6",
+    "bcryptjs": "3.0.3",
     "dotenv": "17.4.2",
     "drizzle-orm": "0.45.2",
     "fastify": "5.10.0",
     "fastify-type-provider-zod": "7.0.0",
+    "js-tiktoken": "1.0.21",
+    "p-queue": "9.3.1",
     "postgres": "3.4.9",
+    "unpdf": "1.6.2",
+    "voyageai": "0.4.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
