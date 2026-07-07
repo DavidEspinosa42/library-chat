@@ -1,0 +1,143 @@
+import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
+import type { StructuredToolInterface } from "@langchain/core/tools";
+import { AIMessage, createAgent, fakeModel, tool } from "langchain";
+import { describe, expect, test } from "vitest";
+import { z } from "zod";
+import { processCitations } from "./postprocess/citations.js";
+import { getPromptSet, type RetrievedEntry } from "./prompt/registry.js";
+import { NO_EVIDENCE, OUT_OF_SCOPE } from "./prompt/templates.js";
+
+/**
+ * Phase 2 smoke test: agent wiring + prompt envelope + citation post-processing,
+ * fully offline via LangChain's scripted fakeModel (docs/02 test-mode story).
+ */
+
+const prompts = getPromptSet();
+
+function makeStubSearchTool(registry: RetrievedEntry[]) {
+  return tool(
+    async ({ query: _query }: { query: string }) => {
+      const entry: RetrievedEntry = {
+        n: registry.length + 1,
+        chunkId: "3f0e2f9e-58a2-4f5f-9d2e-1c9a35b6a111",
+        documentId: "9a7b6c5d-4e3f-4a2b-8c1d-0e9f8a7b6c5d",
+        documentTitle: "The Art of War",
+        location: "I. Laying Plans",
+        content: "All warfare is based on deception.",
+      };
+      registry.push(entry);
+      return prompts.formatSearchResults([entry]);
+    },
+    {
+      name: "search_chunks",
+      description: "stub retrieval",
+      schema: z.object({ query: z.string() }),
+    },
+  );
+}
+
+describe("agent flow (scripted fake model)", () => {
+  test("tool call → cited answer; invented markers stripped and flagged", async () => {
+    const registry: RetrievedEntry[] = [];
+    const model = fakeModel()
+      .respondWithTools([
+        { name: "search_chunks", args: { query: "deception" }, id: "call_1" },
+      ])
+      .respond(
+        new AIMessage("Sun Tzu grounds strategy in deception [1], not fortune [7]."),
+      );
+
+    const agent = createAgent({
+      model: model as unknown as BaseChatModel,
+      tools: [makeStubSearchTool(registry) as StructuredToolInterface],
+      systemPrompt: prompts.buildChatSystemPrompt([
+        { id: "9a7b6c5d-4e3f-4a2b-8c1d-0e9f8a7b6c5d", title: "The Art of War" },
+      ]),
+    });
+
+    const result = await agent.invoke(
+      { messages: [{ role: "user", content: "What is strategy based on?" }] },
+      { recursionLimit: 9 },
+    );
+
+    const lastAi = result.messages.filter((m) => m instanceof AIMessage).at(-1);
+    const processed = processCitations(String(lastAi?.content), registry);
+
+    expect(model.callCount).toBe(2); // tool turn + answer turn
+    expect(registry).toHaveLength(1);
+    expect(processed.content).toContain("[1]");
+    expect(processed.content).not.toContain("[7]");
+    expect(processed.invalidCitations).toBe(1);
+    expect(processed.citations).toHaveLength(1);
+    expect(processed.citations[0]).toMatchObject({
+      n: 1,
+      documentTitle: "The Art of War",
+      location: "I. Laying Plans",
+    });
+  });
+});
+
+describe("prompt module", () => {
+  test("literal templates are locked (evals match them exactly)", () => {
+    expect(NO_EVIDENCE).toBe(
+      "I couldn't find information about this in the selected documents.",
+    );
+    expect(OUT_OF_SCOPE).toBe(
+      "I can only answer questions about the documents you've selected. Please ask something related to their content.",
+    );
+  });
+
+  test("system prompt embeds sources and both templates", () => {
+    const sp = prompts.buildChatSystemPrompt([{ id: "id-1", title: "Meditations" }]);
+    expect(sp).toContain('"Meditations" (documentId: id-1)');
+    expect(sp).toContain(NO_EVIDENCE);
+    expect(sp).toContain(OUT_OF_SCOPE);
+  });
+
+  test("search results use the low-trust envelope with numbering", () => {
+    const out = prompts.formatSearchResults([
+      {
+        n: 3,
+        chunkId: "c",
+        documentId: "d",
+        documentTitle: 'He said "run"',
+        location: null,
+        content: "text",
+      },
+    ]);
+    expect(out).toContain('<document-content n="3"');
+    expect(out).toContain("source=\"He said 'run'\""); // quotes escaped in attrs
+    expect(out).toContain("</document-content>");
+  });
+});
+
+describe("citation post-processing", () => {
+  test("answers starting with a template are truncated to exactly the template", () => {
+    const r = processCitations(
+      `${NO_EVIDENCE}\n\nHowever, here is some helpful elaboration [1].`,
+      [],
+    );
+    expect(r).toEqual({ content: NO_EVIDENCE, citations: [], invalidCitations: 0 });
+  });
+
+  test("no markers → no citations, text untouched", () => {
+    const r = processCitations("Plain answer.", []);
+    expect(r).toEqual({ content: "Plain answer.", citations: [], invalidCitations: 0 });
+  });
+
+  test("repeated markers are deduplicated in the citation list", () => {
+    const registry: RetrievedEntry[] = [
+      {
+        n: 1,
+        chunkId: "a",
+        documentId: "b",
+        documentTitle: "T",
+        location: null,
+        content: "x".repeat(300),
+      },
+    ];
+    const r = processCitations("First [1], and again [1].", registry);
+    expect(r.citations).toHaveLength(1);
+    expect(r.citations[0]?.snippet.length).toBeLessThanOrEqual(241); // capped + ellipsis
+  });
+});

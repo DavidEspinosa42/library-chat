@@ -34,7 +34,9 @@ const envSchema = z
     EMBEDDING_MODEL: z.string().default("voyage-context-4"),
     /** Must match the vector(N) column dimension in db/schema.ts. */
     EMBEDDING_DIM: z.coerce.number().int().default(1024),
-    EMBED_GROUP_MAX_TOKENS: z.coerce.number().int().default(100_000),
+    // voyage-context-4 window: 32k tokens PER GROUP (inner list) — cl100k
+    // approximation + different tokenizer → generous safety margin.
+    EMBED_GROUP_MAX_TOKENS: z.coerce.number().int().default(28_000),
 
     QUEUE_CONCURRENCY: z.coerce.number().int().min(1).default(2),
     CHUNK_TOKENS: z.coerce.number().int().default(400),

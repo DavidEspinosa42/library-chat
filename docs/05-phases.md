@@ -54,19 +54,19 @@ Install: @fastify/jwt · @fastify/cookie · bcryptjs · @fastify/multipart · un
 Verify:
 - [x] curl flow: register → login → upload **all 5 seed books** → poll to `ready` (all 5, ~9s with fake embeddings)
 - [x] chunks with `location` present in psql; 401 without cookie; corrupt file → `failed` + message; unsupported format → 415 envelope; paste → ready
-- [ ] **Commit**: `feat: auth, documents and multi-format ingestion pipeline`
+- [x] **Commit**: `feat: auth, documents and multi-format ingestion pipeline`
 
 ## Phase 2 — AI core: prompt/ · llm/ · postprocess/ + chat (JSON)
 
-- [ ] `ai/prompt/`: versioned registry (v1), system prompt per `02`, literal templates (exact strings), low-trust envelope, input caps
-- [ ] `ai/llm/`: `initChatModel` factory (env model strings), `fakeModel()` test mode, Anthropic `cache_control` decoration, `createAgent` wiring (`recursionLimit`, `maxTokens` from config)
-- [ ] `ai/tools/search-chunks.ts`: Zod `{query, documentId?}`, server-enforced corpus filter, top-k exact `cosineDistance`, numbered envelope results
-- [ ] `ai/postprocess/citations.ts`: validate `[n]` vs retrieved registry, strip+flag invented markers, build citation list
-- [ ] `POST /chat/sessions` (validate owned+ready) + `POST /chat` (JSON response for now): history from DB, persist messages with promptVersion+model
+- [x] `ai/prompt/`: versioned registry (v1), system prompt per `02`, literal templates (exact strings), low-trust envelope, input caps
+- [x] `ai/llm/`: `initChatModel` factory (env model strings), `fakeModel()` test mode, prompt caching via built-in `anthropicPromptCachingMiddleware` (no-op on other providers), `createAgent` wiring (`recursionLimit`, `maxTokens` from config)
+- [x] `ai/tools/search-chunks.ts`: Zod `{query, documentId?}`, server-enforced corpus filter, top-k exact `cosineDistance`, numbered envelope results
+- [x] `ai/postprocess/citations.ts`: validate `[n]` vs retrieved registry, strip+flag invented markers, build citation list, **enforce literal templates deterministically** (live finding: models append elaboration)
+- [x] `POST /chat/sessions` (validate owned+ready) + `POST /chat` (JSON response for now): history from DB, persist messages with promptVersion+model
 
 Verify:
-- [ ] curl: question about 1 book → valid citations from that book; 2-book comparison → citations from both; no-evidence → exact template
-- [ ] smoke vitest with `fakeModel()` (scripted tool_call → answer)
+- [x] curl vs LIVE providers: cited answer from the right book/chapter · 2-book comparison → markdown table + 11 valid citations from both · no-evidence & out-of-scope → exact templates (0 invalid citations across all runs). Live fix: `EMBED_GROUP_MAX_TOKENS` 28k (voyage-context-4 window = 32k per group)
+- [x] smoke vitest with `fakeModel()` (scripted tool_call → answer) — 7 tests green
 - [ ] **Commit**: `feat: AI core with versioned prompts, agent and citation validation`
 
 ## Phase 3 — SSE + conversations + non-blocking extraction

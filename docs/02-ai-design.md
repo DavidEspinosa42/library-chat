@@ -44,6 +44,11 @@ OUT_OF_SCOPE  = "I can only answer questions about the documents you've selected
 Changing these = a new prompt version. They live in `ai/prompt/templates.ts` and are
 imported by evals — single source of truth.
 
+**Enforced in post-processing, not just prompted** (live finding, 2026-07-07): models tend
+to append helpful elaboration after the template. `ai/postprocess/` truncates any answer
+that *starts with* a template down to exactly the template — the contract is guaranteed
+deterministically in code, where output shaping belongs.
+
 ## Citation protocol
 
 1. `search_chunks` results are numbered per turn: `[1]`, `[2]`, … Each entry carries `{ n, chunkId, documentId, documentTitle, location, snippet }` internally.
@@ -88,7 +93,7 @@ search_chunks — tool() with Zod schema { query: string, documentId?: string }
 
 - Model: `voyage-context-4` @ 1024 dims — contextualized chunk embeddings (each chunk embedded aware of its whole document group). Own chunker; `enable_auto_chunking: false`.
 - Adapter interface (ours, not LangChain's `Embeddings` — the contextualized endpoint needs grouped input):
-  - `embedChunkGroups(groups: string[][]) → number[][][]` — ingestion; groups = chunks per section bundle, ≤ `EMBED_GROUP_MAX_TOKENS` per group.
+  - `embedChunkGroups(groups: string[][]) → number[][][]` — ingestion; groups = chunks per section bundle, ≤ `EMBED_GROUP_MAX_TOKENS` (~28k: the model's 32k-per-group window, live-verified, minus tokenizer margin). Document-level context is therefore bounded per group — an honest model constraint, documented in the README.
   - `embedQuery(text: string) → number[]` — same endpoint, `input_type: 'query'`, single-element input.
 - 429 handling: exponential backoff + jitter (the queue provides throttling).
 - Test mode: deterministic fake (hash-based pseudo-vectors) behind the same factory — identical pipeline, zero network.

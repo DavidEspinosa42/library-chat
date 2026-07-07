@@ -122,7 +122,7 @@ Worker steps (per job — `QUEUE_CONCURRENCY=2` default):
 1. **Parse** by format via a common interface `ParsedDocument { text, sections?: {title, text}[] }` — parsers: `unpdf` (pdf), raw text (txt/md, headings from markdown), `@lingo-reader/epub-parser` (epub, chapters from spine), `@lingo-reader/mobi-parser` (azw3/KF8).
 2. **Cap check**: `MAX_DOC_TOKENS` (default 600k) after parse → exceed = `failed` with a clear message, never silent truncation.
 3. **Chunk** (own chunker): structure-aware split (headings/paragraphs first), ~`CHUNK_TOKENS=400` with `CHUNK_OVERLAP_PCT=15`, heading trail recorded per chunk as `location`.
-4. **Embed**: chunks grouped by section into nested inputs ≤ `EMBED_GROUP_MAX_TOKENS` (~100k, margin under the endpoint's 120k/request cap), `input_type:'document'`, dim 1024; exponential backoff + jitter on 429. Test mode swaps in deterministic fakes.
+4. **Embed**: chunks grouped by section into nested inputs ≤ `EMBED_GROUP_MAX_TOKENS` (~28k — the model's context window is **32k tokens per group**, verified against the live API; 120k total per request), `input_type:'document'`, dim 1024; exponential backoff + jitter on 429. Test mode swaps in deterministic fakes.
 5. **Insert** chunks in batches (~500 rows/INSERT) inside a transaction.
 6. **Mark `ready`** — chat is available now.
 7. **Extraction job** (separate, non-blocking): document card + starter questions from a capped excerpt (`EXTRACTION_EXCERPT_TOKENS` ≈ 30k) → `extractions` row (nullable `error` on failure).

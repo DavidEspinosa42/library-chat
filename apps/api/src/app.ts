@@ -14,6 +14,7 @@ import { env } from "./config/env.js";
 import { sql } from "./db/client.js";
 import { AppError } from "./lib/errors.js";
 import { authRoutes } from "./modules/auth/routes.js";
+import { chatRoutes } from "./modules/chat/routes.js";
 import { documentRoutes } from "./modules/documents/routes.js";
 
 export async function buildApp() {
@@ -93,6 +94,7 @@ export async function buildApp() {
 
   await app.register(authRoutes, { prefix: "/api/v1/auth" });
   await app.register(documentRoutes, { prefix: "/api/v1" });
+  await app.register(chatRoutes, { prefix: "/api/v1" });
 
   return app;
 }
