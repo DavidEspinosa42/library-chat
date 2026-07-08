@@ -5,7 +5,7 @@ import {
   submitDocumentsResponseSchema,
   type DocumentFormat,
 } from "@library-chat/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod";
 import { z } from "zod";
 import { env } from "../../config/env.js";
@@ -57,7 +57,8 @@ export const documentRoutes: FastifyPluginAsyncZod = async (app) => {
         .from(documents)
         .leftJoin(extractions, eq(extractions.documentId, documents.id))
         .where(eq(documents.userId, req.user.sub))
-        .orderBy(desc(documents.createdAt));
+        // Batch uploads share a createdAt — title breaks the tie deterministically.
+        .orderBy(desc(documents.createdAt), asc(documents.title));
       return {
         documents: rows.map((r) => toDocumentDto(r.documents, r.extractions)),
       };
@@ -154,7 +155,7 @@ async function handleUpload(
 async function handlePaste(body: unknown, userId: string): Promise<CreatedDocument[]> {
   const parsed = pasteBodySchema.safeParse(body);
   if (!parsed.success) {
-    throw new AppError("VALIDATION", "Expected { text, title? } or a multipart upload.");
+    throw new AppError("VALIDATION", "Expected { text, title } or a multipart upload.");
   }
   if (parsed.data.text.length > env.MAX_PASTE_CHARS) {
     throw new AppError(
@@ -163,8 +164,7 @@ async function handlePaste(body: unknown, userId: string): Promise<CreatedDocume
     );
   }
 
-  const firstLine = parsed.data.text.trimStart().split("\n", 1)[0] ?? "";
-  const title = parsed.data.title ?? (firstLine.slice(0, 80) || "Pasted text");
+  const title = parsed.data.title;
 
   const [row] = await db
     .insert(documents)

@@ -29,7 +29,9 @@ export const documents = pgTable(
     title: text("title").notNull(),
     filename: text("filename"),
     sourceType: text("source_type", { enum: ["upload", "paste"] }).notNull(),
-    format: text("format", { enum: ["pdf", "txt", "md", "epub", "azw3"] }),
+    format: text("format", {
+      enum: ["pdf", "docx", "doc", "txt", "md", "html", "epub", "mobi", "srt", "vtt"],
+    }),
     status: text("status", { enum: ["processing", "ready", "failed"] })
       .notNull()
       .default("processing"),

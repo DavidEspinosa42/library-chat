@@ -7,7 +7,7 @@
 
 ## Phase D — Documentation-first ✅ (this phase)
 
-- [x] `git init`, `.gitignore`, move seed books to `seed/books/`
+- [x] `git init`, `.gitignore`, move seed books to `seed/`
 - [x] `docs/00-assessment.md` — statement verbatim + traceability + bonus checklist
 - [x] `docs/01-architecture.md` — stack, layout, pinned versions, decisions, ingestion
 - [x] `docs/02-ai-design.md` — 3 AI modules, templates, citations, injection, evals
@@ -41,12 +41,12 @@ Verify:
 ## Phase 1 — Auth + library + multi-format async ingestion
 
 Install: @fastify/jwt · @fastify/cookie · bcryptjs · @fastify/multipart · unpdf ·
-@lingo-reader/epub-parser · @lingo-reader/mobi-parser (.azw3/KF8) · p-queue · js-tiktoken · voyageai
+@lingo-reader/epub-parser · @lingo-reader/mobi-parser (.mobi) · p-queue · js-tiktoken · voyageai
 
 - [x] Auth: register/login/logout, bcryptjs, JWT httpOnly cookie, auth guard on `/api/v1/*` (except auth/healthz)
 - [x] `POST /documents`: multipart multi-file + JSON paste; whitelist/size/count limits per `01` (error envelope codes per `04`)
 - [x] `GET /documents`, `GET /documents/:id`
-- [x] Parsers with common `ParsedDocument` interface: pdf, text (txt/md), epub, azw3 — verify lingo-reader API on install
+- [x] Parsers with common `ParsedDocument` interface: pdf, text (txt/md), epub, mobi — verify lingo-reader API on install
 - [x] Chunker: structure-aware, ~400 tokens / 15% overlap, heading trail → `location` (incl. roman-numeral chapter headings)
 - [x] Voyage adapter (`embedChunkGroups` / `embedQuery`, contextualized endpoint, `enable_auto_chunking:false`, backoff+jitter) + deterministic fake behind the same factory (`TEST_MODE`)
 - [x] Worker: p-queue (`QUEUE_CONCURRENCY=2`), idempotent, parse (magic-byte sniff + 60s timeout) → cap → chunk → embed (section groups ≤ `EMBED_GROUP_MAX_TOKENS`) → batch insert → `ready`/`failed`
@@ -80,23 +80,25 @@ Verify:
 - [x] `curl -N` vs live model: 21 token deltas + tool_call (model even narrowed by documentId) + citations + done(content+usage) events
 - [x] Zod-valid cards for all 5 books (real titles/authors/docType, 3–5 starter questions, themes clamped to 8)
 - [x] Conversation list (ordered by last activity, titled by sources) + detail with citation-bearing history
-- [ ] **Commit**: `feat: SSE streaming, conversation history and document cards`
+- [x] **Commit**: `feat: SSE streaming, conversation history and document cards`
 
 ## Phase 4 — Frontend SPA (/login · /library · /chat)
 
 Install: react 19.2 · react-dom · react-router 8.1 · vite 8.1 · @vitejs/plugin-react ·
 tailwindcss 4.3 + @tailwindcss/vite · react-markdown 10.1 + remark-gfm 4
 
-- [ ] `/login` (+ register) — loading/error states
-- [ ] `/library`: upload form (multi-file, 5 formats) + paste textarea; list with live status badges (polling); selection checkboxes on ready docs + "Start chat with selected (n)"; document card view (title/author/type/summary/themes/entities/starter questions, "analyzing…" and failed states)
-- [ ] Upload UX: non-blocking; batch tracking → toast "Your N documents are ready · Start chat with them →" (creates session, navigates to /chat)
-- [ ] `/chat` empty state = source picker (ready selectable; processing visible, disabled, live status + ready toast)
-- [ ] `/chat` conversation: locked source chips, "Conversations ▾" list (open past conversation → view + continue), "+ New chat"; streaming via fetch+ReadableStream; "thinking…" on tool_call; markdown render with GFM tables; citation chips (document + location + snippet); error state with retry; re-ask button (preloads last question); starter-question chips as empty conversation state; usage footer from `done`
-- [ ] Loading/error/empty states everywhere; minimal Tailwind
+- [x] `/login` (+ register) — loading/error states, autocomplete attrs
+- [x] `/library`: upload form (multi-file, 10 formats) + paste form (required title); list with live status badges (polling); row click opens the document card (title/author/type/summary/themes/entities/starter questions, "analyzing…" and failed states); clickable themes/starter questions launch a chat with that question
+- [x] Upload UX: non-blocking; batch tracking → toast with "Start chat →" CTA (creates session, navigates to /chat)
+- [x] `/chat` empty state = source picker, the single multi-select surface (whole-card toggle, dark-pine selected state; processing visible, disabled, live status + ready toast)
+- [x] `/chat` conversation: locked source chips, conversations sidebar (open past conversation → view + continue; "+ New chat" only inside a conversation); streaming via fetch+ReadableStream; "thinking…" on tool_call; markdown render with GFM tables; citation chips (document + location + snippet popover; Escape/click-outside close); error state with retry; re-ask button (preloads last question, refocuses input); starter-question chips as empty conversation state; usage footer from `done`
+- [x] Loading/error/empty states everywhere; minimal Tailwind
+- [x] Post-review refinement rounds (user UX feedback): reading-room design system (paper/ink/pine/brass tokens, serif display, Tailwind `@theme`); conversations sidebar replacing the dropdown; multi-select moved to the chat picker only (whole-card toggle, dark-pine selected state); clickable themes/starter questions launch a chat with `?ask=` auto-send; required title for pasted text; DRY extraction (useDocuments/useStartChat hooks, PrimaryButton/ErrorAlert/StarterQuestion/DocumentRowContent components); citation renumbering to 1..N in postprocess; docType taxonomy expanded to 12 values + em-dash-free extraction (prompt rule + deterministic sanitizer); upload formats extended to 10 with docx (mammoth), doc (word-extractor), html, mobi, srt, vtt
 
 Verify:
-- [ ] Manual browser flow: register → upload book → ready toast → card → starter question → cited answer → 2-book comparison renders a table → past conversation reopened and continued
-- [ ] **Commit**: `feat: React SPA with library, chat and conversation history`
+- [x] Browser flow (driven via Playwright vs live providers): login → library with 5 ready books → Meditations card (summary/themes/entities/4 starter questions) → select 2 books → start chat → starter chips from both → comparative question streams a 6-row GFM table with 12 valid citation chips from both books + usage footer → re-ask prefills → history-aware follow-up (1.6s, no re-search) → Conversations dropdown (7, "(deleted)" audit entry) → past conversation reopened with history → paste → processing → ready toast with CTA. Live fix: streaming usage merged by max per message (input tokens arrived as 0)
+- [x] `pnpm --filter web build` production build green (128 KB gzip)
+- [x] **Commit**: `feat: React SPA with library, chat and conversation history`
 
 ## Phase 5 — Tests + evals + seed + API hardening
 
@@ -106,7 +108,7 @@ Install: vitest 4.1 · @fastify/rate-limit · @fastify/swagger + swagger-ui · l
 - [ ] AI-layer tests (colocated): registry/envelope/templates · parsers (tiny fixtures per format + integration with the 5 real books) · tool shaping · postprocess (invented citations, structured parse/reject) · agent flow with `fakeModel()`
 - [ ] API-layer tests: `fastify.inject` + fakes + test DB — auth flow, submit → status transitions, sessions + chat contract. No network
 - [ ] Web component tests (3–4): citation chip, status badge, SSE client event parser
-- [ ] Seed script: demo user + ingest `seed/books/` (all 5)
+- [ ] Seed script: demo user + ingest `seed/` (all 6 — ingest the 4 books first, then the docx, then the srt, so the two samples sit at the top of the library list, which orders by createdAt desc)
 - [ ] `@fastify/rate-limit` keyed by userId; swagger at `/docs` via `jsonSchemaTransform`
 - [ ] `evals/`: golden set per `02` (retrieval-only recall@3 ≥ 0.8, factual per book, cross-book comparatives, no-evidence, out-of-scope, poisoned-book injection, extraction goldens) + judge (Sonnet 5) + `pnpm eval` → console + timestamped JSON in `evals/results/`
 

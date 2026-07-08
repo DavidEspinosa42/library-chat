@@ -133,11 +133,31 @@ describe("citation post-processing", () => {
         documentId: "b",
         documentTitle: "T",
         location: null,
-        content: "x".repeat(300),
+        content: "x".repeat(700),
       },
     ];
     const r = processCitations("First [1], and again [1].", registry);
     expect(r.citations).toHaveLength(1);
-    expect(r.citations[0]?.snippet.length).toBeLessThanOrEqual(241); // capped + ellipsis
+    expect(r.citations[0]?.snippet.length).toBeLessThanOrEqual(601); // capped + ellipsis
+  });
+
+  test("cited markers are renumbered 1..N in first-appearance order", () => {
+    const entry = (n: number): RetrievedEntry => ({
+      n,
+      chunkId: `chunk-${n}`,
+      documentId: "d",
+      documentTitle: "T",
+      location: null,
+      content: `content ${n}`,
+    });
+    // Registry numbers everything retrieved (with gaps left by unused chunks).
+    const registry = [entry(3), entry(9), entry(17)];
+    const r = processCitations("Claim [17], then [3], and again [17].", registry);
+    expect(r.content).toBe("Claim [1], then [2], and again [1].");
+    expect(r.citations.map((c) => ({ n: c.n, chunkId: c.chunkId }))).toEqual([
+      { n: 1, chunkId: "chunk-17" },
+      { n: 2, chunkId: "chunk-3" },
+    ]);
+    expect(r.invalidCitations).toBe(0);
   });
 });

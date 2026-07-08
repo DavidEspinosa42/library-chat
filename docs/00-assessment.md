@@ -160,7 +160,7 @@ Phases refer to `05-phases.md`. "README" items land in Phase 7.
 
 | Requirement | Where it is fulfilled |
 |---|---|
-| 1.1 Submit content (text or documents) | `POST /api/v1/documents` — multipart upload (5 formats: pdf, txt, md, epub, azw3) **and** pasted-text JSON body — Phase 1 |
+| 1.1 Submit content (text or documents) | `POST /api/v1/documents` — multipart upload (10 formats: pdf, docx, doc, txt, md, html, epub, mobi, srt, vtt) **and** pasted-text JSON body — Phase 1 |
 | 1.1 Interact with AI over that content | Multi-source RAG chat with citations — Phases 2–3 |
 | 1.1 View structured outputs | Per-document structured card (summary, type, entities, starter questions) + comparative markdown tables in chat — Phases 3–4 |
 | 1.2 Node.js (preferred) + REST API | Fastify 5, routes under `/api/v1` — Phase 0+ |

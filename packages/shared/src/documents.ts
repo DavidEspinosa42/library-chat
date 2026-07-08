@@ -1,6 +1,17 @@
 import { z } from "zod";
 
-export const documentFormatSchema = z.enum(["pdf", "txt", "md", "epub", "azw3"]);
+export const documentFormatSchema = z.enum([
+  "pdf",
+  "docx",
+  "doc",
+  "txt",
+  "md",
+  "html",
+  "epub",
+  "mobi",
+  "srt",
+  "vtt",
+]);
 export type DocumentFormat = z.infer<typeof documentFormatSchema>;
 
 export const documentStatusSchema = z.enum(["processing", "ready", "failed"]);
@@ -25,7 +36,7 @@ export type DocumentDto = z.infer<typeof documentDtoSchema>;
 
 export const pasteBodySchema = z.object({
   text: z.string().min(1),
-  title: z.string().min(1).max(200).optional(),
+  title: z.string().trim().min(1).max(200),
 });
 export type PasteBody = z.infer<typeof pasteBodySchema>;
 

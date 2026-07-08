@@ -147,9 +147,12 @@ async function streamTurn(
     const id = chunk.id ?? "message";
 
     if (chunk.usage_metadata) {
+      // Providers split usage across chunks (input on the first, output on the
+      // last) — merge by max per field instead of keeping the last snapshot.
+      const prev = usageById.get(id) ?? { input: 0, output: 0 };
       usageById.set(id, {
-        input: chunk.usage_metadata.input_tokens ?? 0,
-        output: chunk.usage_metadata.output_tokens ?? 0,
+        input: Math.max(prev.input, chunk.usage_metadata.input_tokens ?? 0),
+        output: Math.max(prev.output, chunk.usage_metadata.output_tokens ?? 0),
       });
     }
 

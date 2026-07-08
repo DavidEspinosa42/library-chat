@@ -1,10 +1,11 @@
 /**
- * Minimal HTML → plain text for ebook chapters (epub/azw3 content is simple
+ * Minimal HTML → plain text for ebook chapters (epub/mobi content is simple
  * XHTML). Block-level tags become newlines; entities are decoded for the
  * handful that matter in prose.
  */
 export function htmlToText(html: string): string {
   const text = html
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
     .replace(/<\/(p|div|h[1-6]|li|blockquote|tr|section|article)>/gi, "\n\n")
     .replace(/<(br|hr)\s*\/?>/gi, "\n")
@@ -19,6 +20,14 @@ export function htmlToText(html: string): string {
     .replace(/&ndash;/gi, "–")
     .replace(/&#(\d+);/g, (_, code: string) => String.fromCodePoint(Number(code)));
   return normalizeWhitespace(text);
+}
+
+/** Split HTML into sections at each heading; the heading becomes the section title. */
+export function splitHtmlSections(html: string): { title: string | null; text: string }[] {
+  return html
+    .split(/(?=<h[1-6][^>]*>)/i)
+    .map((part) => ({ title: firstHeading(part), text: htmlToText(part) }))
+    .filter((s) => s.text.length > 0);
 }
 
 /** First heading in a chapter's HTML, used as its section title. */

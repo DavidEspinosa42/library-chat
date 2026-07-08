@@ -26,10 +26,10 @@
 |---|---|---|
 | id | uuid PK | |
 | user_id | uuid FK→users CASCADE | |
-| title | text NOT NULL | filename without extension, or first line of pasted text |
+| title | text NOT NULL | filename without extension, or the required title of pasted text |
 | filename | text NULL | null for pasted text |
 | source_type | text NOT NULL | `upload` \| `paste` |
-| format | text NULL | `pdf`\|`txt`\|`md`\|`epub`\|`azw3`; null for paste |
+| format | text NULL | `pdf`\|`docx`\|`doc`\|`txt`\|`md`\|`html`\|`epub`\|`mobi`\|`srt`\|`vtt`; null for paste |
 | status | text NOT NULL | `processing` → `ready` \| `failed` |
 | error | text NULL | human-readable failure reason |
 | token_count | int NULL | set after parse |

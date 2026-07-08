@@ -1,7 +1,7 @@
 # library-chat — working guide
 
 Multi-source document analyst (Full Stack AI Engineer assessment). Users upload documents
-(pdf/txt/md/epub/azw3 or pasted text) → async ingestion (parse → chunk → embed → card) →
+(pdf/docx/doc/txt/md/html/epub/mobi/srt/vtt or pasted text) → async ingestion (parse → chunk → embed → card) →
 RAG chat over selected sources with validated citations. Stack: pnpm monorepo · Fastify 5
 + Zod 4 · PostgreSQL/pgvector (Drizzle) · LangChain v1 `createAgent` (Claude Haiku 4.5) ·
 voyage-context-4 embeddings · React 19/Vite SPA · docker-compose · Terraform (never applied).

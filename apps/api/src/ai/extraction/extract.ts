@@ -91,7 +91,34 @@ async function extractCard(excerpt: string, fallbackTitle: string): Promise<Docu
   if (start === -1 || end <= start) {
     throw new Error(`Extraction returned no JSON object: ${text.slice(0, 120)}`);
   }
-  return documentCardSchema.parse(JSON.parse(text.slice(start, end + 1)));
+  const raw = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>;
+  // Documents without a stated title (transcripts, notes) come back as null —
+  // fall back to the stored title instead of failing validation.
+  if (typeof raw["title"] !== "string" || raw["title"].trim().length === 0) {
+    raw["title"] = fallbackTitle;
+  }
+  // Models occasionally invent a docType outside the taxonomy — coerce to "other".
+  const docTypes: readonly string[] = documentCardSchema.shape.docType.options;
+  if (typeof raw["docType"] !== "string" || !docTypes.includes(raw["docType"])) {
+    raw["docType"] = "other";
+  }
+  return sanitizeCard(documentCardSchema.parse(raw));
+}
+
+/** House style bans em dashes; enforced deterministically, not begged from the model. */
+function stripEmDashes(text: string): string {
+  return text.replace(/\s*—\s*/g, ", ");
+}
+
+function sanitizeCard(card: DocumentCard): DocumentCard {
+  return {
+    ...card,
+    title: stripEmDashes(card.title),
+    summary: stripEmDashes(card.summary),
+    themes: card.themes.map(stripEmDashes),
+    keyEntities: card.keyEntities.map((e) => ({ ...e, value: stripEmDashes(e.value) })),
+    starterQuestions: card.starterQuestions.map(stripEmDashes),
+  };
 }
 
 /** TEST_MODE card: deterministic, schema-valid, derived from real content. */

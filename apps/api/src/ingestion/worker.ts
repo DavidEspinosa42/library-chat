@@ -115,14 +115,21 @@ class IngestionError extends Error {}
 
 /** Cheap signature sniff — catches renamed/corrupt files before parsers hang on them. */
 function validateMagicBytes(buffer: Buffer, format: IngestionJob["format"]): void {
-  const ok =
-    format === "pdf"
-      ? buffer.subarray(0, 5).toString("latin1") === "%PDF-"
-      : format === "epub"
-        ? buffer[0] === 0x50 && buffer[1] === 0x4b // zip "PK"
-        : format === "azw3"
-          ? buffer.subarray(60, 68).toString("latin1") === "BOOKMOBI"
-          : true; // txt/md: any text goes
+  const ok = (() => {
+    switch (format) {
+      case "pdf":
+        return buffer.subarray(0, 5).toString("latin1") === "%PDF-";
+      case "epub":
+      case "docx": // both are zip containers
+        return buffer[0] === 0x50 && buffer[1] === 0x4b; // "PK"
+      case "doc": // OLE compound file
+        return buffer.length >= 4 && buffer.readUInt32BE(0) === 0xd0cf11e0;
+      case "mobi": // PalmDB container
+        return buffer.subarray(60, 68).toString("latin1") === "BOOKMOBI";
+      default:
+        return true; // txt/md/html/srt/vtt: any text goes
+    }
+  })();
   if (!ok) {
     throw new IngestionError(
       `File content does not look like a valid .${format} file.`,

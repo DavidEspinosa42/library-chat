@@ -8,12 +8,14 @@
 ## Product in one paragraph
 
 **library-chat** is a multi-source document analyst. Users upload documents of any kind
-(.pdf, .txt, .md, .epub, .azw3 — or paste raw text). An async pipeline parses, chunks,
+(.pdf, .docx, .doc, .txt, .md, .html, .epub, .mobi, .srt, .vtt — or paste raw
+text). An async pipeline parses, chunks,
 embeds and profiles each document (structured card + clickable starter questions). A chat
 agent answers questions grounded in **one or many user-selected sources** via RAG, always
 with precise citations (document + section + snippet). Comparative questions across
-sources render as markdown tables citing each source. The demo corpus is five public-domain
-books — one per supported format — chosen to stress-test long-document ingestion.
+sources render as markdown tables citing each source. The demo corpus is four public-domain
+books (chosen to stress-test long-document ingestion) plus two extra-format samples
+(docx, srt).
 
 ## Stack at a glance
 
@@ -39,7 +41,7 @@ books — one per supported format — chosen to stress-test long-document inges
 ├─ pnpm-workspace.yaml
 ├─ docker-compose.yml              # db | db+api+web | test profile
 ├─ .env.example                    # kept in sync with config/env.ts
-├─ seed/books/                     # 5-format demo corpus (public domain)
+├─ seed/                           # demo corpus: 4 public-domain books + 2 extra-format samples
 ├─ apps/api/src/
 │  ├─ config/env.ts                # single Zod-validated config entry point
 │  ├─ db/{schema.ts, client.ts}    # Drizzle; migrations/ generated
@@ -51,7 +53,7 @@ books — one per supported format — chosen to stress-test long-document inges
 │  │  ├─ postprocess/              # (3) response post-processing — citation validation
 │  │  ├─ extraction/               # document card + starter questions
 │  │  └─ embeddings/               # voyage-context-4 adapter + test fakes
-│  ├─ ingestion/                   # queue, worker, chunker, parsers/{pdf,text,epub,azw3}
+│  ├─ ingestion/                   # queue, worker, chunker, parsers/{pdf,docx,doc,text,html,epub,mobi,subtitles}
 │  └─ {app.ts, server.ts}
 ├─ apps/web/src/{pages/(login,library,chat), components, lib/(api.ts, sse.ts)}
 ├─ packages/shared/src/            # Zod schemas for API contracts + SSE event types
@@ -75,8 +77,10 @@ Compatibility anchors — do not bump majors without re-checking the notes colum
 | postgres (porsager) | 3.4.9 | Driver for Drizzle |
 | langchain / @langchain/core / @langchain/anthropic | 1.5.2 / 1.2.1 / 1.5.1 | v1 API: `createAgent`, `tool`, `fakeModel` from `"langchain"`; `initChatModel` from `"langchain/chat_models/universal"` |
 | voyageai | 0.4.0 | Official TS SDK; we call the contextualized-embeddings endpoint |
-| @lingo-reader/epub-parser / mobi-parser | 0.4.6 | mobi-parser handles .azw3 (KF8) — verify exact API on install |
+| @lingo-reader/epub-parser / mobi-parser | 0.4.6 | mobi-parser handles .mobi (`initMobiFile`) |
 | unpdf | 1.6.2 | PDF text extraction (maintained pdf-parse successor) |
+| mammoth | 1.12.0 | .docx → semantic HTML (headings become the location trail) |
+| word-extractor | 1.0.4 | Legacy OLE .doc → plain text (pure JS); typed via @types/word-extractor 1.0.6 |
 | p-queue | 9.3.1 | ESM-only → whole monorepo is ESM |
 | js-tiktoken | 1.0.21 | Token counting for chunker |
 | bcryptjs | 3.0.3 | Pure JS — no node-gyp on Windows/Alpine |
@@ -119,7 +123,7 @@ with the created document list. Failures are isolated per document.
 
 Worker steps (per job — `QUEUE_CONCURRENCY=2` default):
 
-1. **Parse** by format via a common interface `ParsedDocument { text, sections?: {title, text}[] }` — parsers: `unpdf` (pdf), raw text (txt/md, headings from markdown), `@lingo-reader/epub-parser` (epub, chapters from spine), `@lingo-reader/mobi-parser` (azw3/KF8).
+1. **Parse** by format via a common interface `ParsedDocument { text, sections?: {title, text}[] }` — parsers: `unpdf` (pdf), `mammoth` (docx → HTML, sections split at headings), `word-extractor` (legacy .doc → text heuristics), raw text (txt/md, headings from markdown), own HTML splitter (html, `<title>` + heading sections), `@lingo-reader/epub-parser` (epub, chapters from spine), `@lingo-reader/mobi-parser` (mobi, chapters from spine), subtitle cues grouped into ~5-minute sections (srt/vtt, timestamps as `location`).
 2. **Cap check**: `MAX_DOC_TOKENS` (default 600k) after parse → exceed = `failed` with a clear message, never silent truncation.
 3. **Chunk** (own chunker): structure-aware split (headings/paragraphs first), ~`CHUNK_TOKENS=400` with `CHUNK_OVERLAP_PCT=15`, heading trail recorded per chunk as `location`.
 4. **Embed**: chunks grouped by section into nested inputs ≤ `EMBED_GROUP_MAX_TOKENS` (~28k — the model's context window is **32k tokens per group**, verified against the live API; 120k total per request), `input_type:'document'`, dim 1024; exponential backoff + jitter on 429. Test mode swaps in deterministic fakes.
@@ -130,8 +134,8 @@ Worker steps (per job — `QUEUE_CONCURRENCY=2` default):
 Jobs are **idempotent**: a retry deletes the document's previous chunks before re-inserting.
 
 Upload limits (all env-configured, validated at the route): format whitelist by
-extension+mimetype (pdf/txt/md/epub/azw3, otherwise `415`), `MAX_FILE_MB=25`,
-`MAX_FILES_PER_UPLOAD=10`, `MAX_PASTE_CHARS=500000`.
+extension+mimetype (pdf/docx/doc/txt/md/html/epub/mobi/srt/vtt, otherwise `415`),
+`MAX_FILE_MB=25`, `MAX_FILES_PER_UPLOAD=10`, `MAX_PASTE_CHARS=500000`.
 
 ## Local topology
 

@@ -10,7 +10,7 @@
 - **Error envelope** (every error, everywhere):
 
 ```json
-{ "error": { "code": "UNSUPPORTED_FORMAT", "message": "Format '.docx' is not supported. Accepted: pdf, txt, md, epub, azw3." } }
+{ "error": { "code": "UNSUPPORTED_FORMAT", "message": "Format '.xlsx' is not supported. Accepted: pdf, docx, doc, txt, md, html, epub, mobi, srt, vtt." } }
 ```
 
 - **Listings are unpaginated by design** (demo scale: tens of documents, one active conversation). Cursor pagination is the documented upgrade path.
@@ -43,8 +43,8 @@
 
 ### `POST /documents` — submit content (multipart OR JSON)
 
-- **Multipart**: 1..`MAX_FILES_PER_UPLOAD` files. Per-file whitelist (pdf/txt/md/epub/azw3 by extension+mimetype) and size cap. One document row + one ingestion job per file — failures isolated.
-- **JSON**: `{ text, title? }` (pasted content, ≤ `MAX_PASTE_CHARS`; title defaults to first line).
+- **Multipart**: 1..`MAX_FILES_PER_UPLOAD` files. Per-file whitelist (pdf/docx/doc/txt/md/html/epub/mobi/srt/vtt by extension+mimetype) and size cap. One document row + one ingestion job per file — failures isolated.
+- **JSON**: `{ text, title }` (pasted content, ≤ `MAX_PASTE_CHARS`; title is required, ≤ 200 chars).
 - **`202 Accepted`** — ingestion is async:
 
 ```json
