@@ -230,6 +230,10 @@ function Conversation({ sessionId }: { sessionId: string }) {
   const lastQuestion = useRef<string>("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Monotonic message-key source — never Date.now(), which collides when two
+  // messages are appended within the same millisecond (React duplicate keys).
+  const seq = useRef(0);
+  const uid = () => `${seq.current++}`;
 
   // The input is disabled while streaming — hand the focus back afterwards.
   useEffect(() => {
@@ -237,11 +241,17 @@ function Conversation({ sessionId }: { sessionId: string }) {
   }, [busy]);
 
   useEffect(() => {
+    // `ignore` gate: under React StrictMode the effect is invoked twice in dev;
+    // without this, the ?ask= auto-send fires twice → a duplicate chat request
+    // (two LangSmith traces) and colliding message keys. Only the live effect
+    // run (the one not cleaned up) proceeds.
+    let ignore = false;
     api
       .get<{ session: SessionListItem; messages: MessageDto[] }>(
         `/api/v1/chat/sessions/${sessionId}`,
       )
       .then(({ session: s, messages: history }) => {
+        if (ignore) return;
         setSession(s);
         setMessages(
           history.map((m) => ({
@@ -264,9 +274,13 @@ function Conversation({ sessionId }: { sessionId: string }) {
           }
         }
       })
-      .catch((err) =>
-        setLoadError(err instanceof Error ? err.message : "Failed to load the conversation."),
-      );
+      .catch((err) => {
+        if (ignore) return;
+        setLoadError(err instanceof Error ? err.message : "Failed to load the conversation.");
+      });
+    return () => {
+      ignore = true;
+    };
   }, [sessionId]);
 
   async function loadStarters(documentIds: string[]) {
@@ -295,10 +309,10 @@ function Conversation({ sessionId }: { sessionId: string }) {
     setInput("");
     lastQuestion.current = message;
 
-    const assistantKey = `stream-${Date.now()}`;
+    const assistantKey = `stream-${uid()}`;
     setMessages((prev) => [
       ...prev,
-      { key: `user-${Date.now()}`, role: "user", content: message },
+      { key: `user-${uid()}`, role: "user", content: message },
       { key: assistantKey, role: "assistant", content: "" },
     ]);
 
