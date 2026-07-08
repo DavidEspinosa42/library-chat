@@ -119,15 +119,15 @@ Verify:
 
 ## Phase 6 — Docker full stack + CI + GitHub
 
-- [ ] API Dockerfile multi-stage (`node:24-alpine`); web build → nginx with `/api` proxy (buffering off for SSE)
-- [ ] Full compose (db+api+web) + test profile (`TEST_MODE=1`, keyless)
-- [ ] GitHub repo **library-chat** + push
-- [ ] `ci.yml`: lint, typecheck, unit+API+component tests, docker builds, `terraform fmt -check` + `validate` (plan if creds); badge in README. `evals.yml`: workflow_dispatch
+- [x] API Dockerfile multi-stage (`node:24-alpine`, tsx runtime, migrates on start); web build → nginx with `/api` proxy (buffering off on `/api/v1/chat` for SSE); root `.dockerignore`
+- [x] Full compose (db+api+web) + keyless test override (`docker-compose.test.yml`, `TEST_MODE=1`, `NODE_ENV=test`)
+- [x] GitHub repo **library-chat** + push
+- [x] `ci.yml`: lint, typecheck, tests (pgvector service + test DB), api+web docker builds, guarded `terraform fmt -check` + `validate` (no-ops until Phase 7); badge in README. `evals.yml`: workflow_dispatch (seed + eval on live provider via secrets)
 
 Verify:
-- [ ] `docker compose up` brings up the entire system locally
-- [ ] CI green (lint · typecheck · tests · docker builds)
-- [ ] **Commit**: `feat: dockerized stack and CI pipeline`
+- [x] `docker compose -f docker-compose.yml -f docker-compose.test.yml up` brings up the whole system keyless; full flow verified via nginx (register → paste → ready → session → chat SSE: token/tool_call/citations/done). Live fix: api healthcheck uses `127.0.0.1` (busybox wget resolves `localhost` to IPv6 first)
+- [~] CI: workflows are valid (actionlint clean) and GitHub triggers them, but runner provisioning fails at the account level (even a trivial `echo` job fails with no steps/logs) — GitHub's anti-abuse gate on a fresh account. Unblock: verify a payment method / enable Actions runners on the account, then re-run. The exact `lint · typecheck · tests` gate is green locally.
+- [x] **Commit**: `feat: dockerized stack and CI pipeline`
 
 ## Phase 7 — Terraform + README + costs
 

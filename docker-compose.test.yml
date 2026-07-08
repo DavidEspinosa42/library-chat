@@ -1,0 +1,12 @@
+# Keyless test stack (docs/05): TEST_MODE=1 swaps all AI to offline fakes, so
+# the whole system runs with no API keys. NODE_ENV=test keeps the auth cookie
+# non-Secure so it flows over plain-HTTP localhost.
+#   docker compose -f docker-compose.yml -f docker-compose.test.yml up
+services:
+  api:
+    environment:
+      NODE_ENV: test
+      TEST_MODE: "1"
+      JWT_SECRET: test-secret-not-for-production-0123
+      ANTHROPIC_API_KEY: ""
+      VOYAGE_API_KEY: ""

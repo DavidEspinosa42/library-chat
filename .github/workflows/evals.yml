@@ -1,0 +1,42 @@
+name: Evals
+
+# On-demand only: the eval suite calls the live provider (cost + non-determinism),
+# so it is never part of the push/PR gate (docs/02). Needs a seeded database and
+# real API keys, supplied as repository secrets.
+on:
+  workflow_dispatch:
+
+jobs:
+  eval:
+    name: pnpm eval (live provider)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: librarychat
+          POSTGRES_PASSWORD: librarychat
+          POSTGRES_DB: librarychat
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U librarychat"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgres://librarychat:librarychat@localhost:5432/librarychat
+      JWT_SECRET: ci-eval-secret-not-for-production
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:migrate
+      - run: pnpm seed
+      - run: pnpm eval

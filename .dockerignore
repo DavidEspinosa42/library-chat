@@ -1,0 +1,19 @@
+# Never ship deps, builds, secrets or local noise into an image build context.
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+.git
+.github
+.env
+.env.*
+!.env.example
+evals/results
+coverage
+playwright-report
+test-results
+*.log
+.DS_Store
+Thumbs.db
+infra/terraform/.terraform
+*.tfstate
+*.tfstate.*

@@ -16,5 +16,43 @@ services:
       timeout: 3s
       retries: 10
 
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    # Real keys come from .env; the compose values override host/origin for the
+    # container network. The keyless test stack (docker-compose.test.yml) needs
+    # no .env, so it is optional here.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      DATABASE_URL: postgres://librarychat:librarychat@db:5432/librarychat
+      WEB_ORIGIN: http://localhost:8080
+    ports:
+      - "3000:3000"
+    healthcheck:
+      # 127.0.0.1 (not localhost) — busybox wget resolves localhost to ::1 first,
+      # but the server listens on 0.0.0.0 (IPv4).
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "8080:80"
+
 volumes:
   pgdata:
