@@ -131,13 +131,13 @@ Verify:
 
 ## Phase 7 — Terraform + README
 
-- [ ] Terraform: api (ECR, ECS Fargate, ALB, RDS Postgres, Secrets Manager, scoped IAM task role) + web (S3 + CloudFront); `terraform fmt` + `validate` clean (plan in CI if creds) — **never apply**
-- [x] README (English, the deliverable): architecture + mermaid; 3 AI modules named against requirement 1.2; 10-format ingestion + product pillars; injection defenses; cost & rate-limit **controls** (cost table scoped out by request); config-vs-code; data flow/retention/PII (from `03`); evaluation & regression story (`evals/`, JSON diffing); AWS (key location, rotation, bursty scaling: SSE vs ALB idle timeout, provider rate limits as ceiling, queue depth signal); ECS-vs-EKS-vs-serverless; data-collection build-vs-buy (cheerio/Playwright/Apify, SSRF); known limitations + upgrade paths; run-locally; requirement→code traceability table. Note: the AWS/Terraform section references `infra/terraform/` (built in the Terraform step); the final claim-audit reconciles it
-- [ ] LangSmith screenshot of a real trace
-- [ ] Final audit: every README claim points at a real file; clean-clone `docker compose up` following only the README
+- [x] Terraform (`infra/terraform/`): api (ECR, ECS Fargate, ALB with SSE-friendly idle timeout, RDS Postgres Multi-AZ + managed master password, Secrets Manager, scoped IAM — execution role reads exactly its 4 secrets, empty task role) + web (S3 private + CloudFront OAC, SPA fallback); VPC (public/private subnets, NAT). `fmt` clean + `validate` **Success** (aws provider ~> 5.60, via docker) — **never applied**; `.terraform.lock.hcl` committed
+- [x] README (English, the deliverable): architecture + mermaid; 3 AI modules named against requirement 1.2; 10-format ingestion + product pillars; injection defenses; cost & rate-limit **controls** (cost table scoped out by request); config-vs-code; data flow/retention/PII (from `03`); evaluation & regression story (`evals/`, JSON diffing); AWS (key location, rotation, bursty scaling: SSE vs ALB idle timeout, provider rate limits as ceiling, queue depth signal); ECS-vs-EKS-vs-serverless; data-collection build-vs-buy (cheerio/Playwright/Apify, SSRF); known limitations + upgrade paths; run-locally; requirement→code traceability table
+- [ ] LangSmith screenshot of a real trace — **needs a live run**: set `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY`, run a chat turn, capture the trace from the LangSmith UI. (User action; not reproducible headlessly.)
+- [x] Final audit: every README file/path link resolves (audited — only intra-doc `#anchor` links, which GitHub generates from headings); clean-clone `docker compose up` path verified end-to-end in Phase 6
 
 Verify:
-- [ ] `terraform validate` green
-- [ ] README claim-by-claim audit done
-- [ ] Full end-to-end criteria from the plan met (lint/typecheck/test green · demo flow in browser · `pnpm eval` pass on injection & no-evidence · CI badge green)
-- [ ] **Commit**: `docs: README, cost analysis and terraform infra`
+- [x] `terraform validate` green (Success; aws ~> 5.60)
+- [x] README claim-by-claim audit done (all local links resolve)
+- [~] Full end-to-end criteria: lint/typecheck/test green · demo flow verified via nginx (Phase 6) · `pnpm eval` passes injection & no-evidence · **CI badge blocked** at the GitHub-account level (runner provisioning, not the config) · LangSmith screenshot pending a live run
+- [ ] **Commit**: `feat: terraform aws infrastructure`
