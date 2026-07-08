@@ -115,7 +115,7 @@ Install: vitest 4.1 · @fastify/rate-limit · @fastify/swagger + swagger-ui · l
 Verify:
 - [x] `pnpm lint && pnpm typecheck && pnpm test` green (72 tests: 61 api + 11 web)
 - [x] `pnpm eval` (live): 20/23 pass, recall@3 0.90 (≥ 0.80), 0 regressions, 3 documented known-limitations; injection + no-evidence + out-of-scope + extraction all pass. **Live findings**: (1) judging faithfulness against the 600-char UI snippet gave false negatives → judge now sees the full cited chunk; (2) a trialled prompt v2 spelling out cross-search citation numbering regressed no-evidence without fixing comparatives → reverted (regression gate working); (3) `fakeModel` streams whole `AIMessage`s not `AIMessageChunk`s → `streamTurn` handles both (TEST_MODE/e2e streaming honesty)
-- [ ] **Commit**: `feat: test suites, eval harness, seed and API hardening`
+- [x] **Commit**: `feat: test suites, eval harness, seed and API hardening`
 
 ## Phase 6 — Docker full stack + CI + GitHub
 
@@ -126,18 +126,18 @@ Verify:
 
 Verify:
 - [x] `docker compose -f docker-compose.yml -f docker-compose.test.yml up` brings up the whole system keyless; full flow verified via nginx (register → paste → ready → session → chat SSE: token/tool_call/citations/done). Live fix: api healthcheck uses `127.0.0.1` (busybox wget resolves `localhost` to IPv6 first)
-- [~] CI: workflows are valid (actionlint clean) and GitHub triggers them, but runner provisioning fails at the account level (even a trivial `echo` job fails with no steps/logs) — GitHub's anti-abuse gate on a fresh account. Unblock: verify a payment method / enable Actions runners on the account, then re-run. The exact `lint · typecheck · tests` gate is green locally.
+- [x] CI green on GitHub Actions: lint · typecheck · tests (pgvector service) · api+web docker builds, all passing. (An initial fresh-account runner-provisioning block was cleared by verifying a payment method.)
 - [x] **Commit**: `feat: dockerized stack and CI pipeline`
 
 ## Phase 7 — Terraform + README
 
 - [x] Terraform (`infra/terraform/`): api (ECR, ECS Fargate, ALB with SSE-friendly idle timeout, RDS Postgres Multi-AZ + managed master password, Secrets Manager, scoped IAM — execution role reads exactly its 4 secrets, empty task role) + web (S3 private + CloudFront OAC, SPA fallback); VPC (public/private subnets, NAT). `fmt` clean + `validate` **Success** (aws provider ~> 5.60, via docker) — **never applied**; `.terraform.lock.hcl` committed
 - [x] README (English, the deliverable): architecture + mermaid; 3 AI modules named against requirement 1.2; 10-format ingestion + product pillars; injection defenses; cost & rate-limit **controls** (cost table scoped out by request); config-vs-code; data flow/retention/PII (from `03`); evaluation & regression story (`evals/`, JSON diffing); AWS (key location, rotation, bursty scaling: SSE vs ALB idle timeout, provider rate limits as ceiling, queue depth signal); ECS-vs-EKS-vs-serverless; data-collection build-vs-buy (cheerio/Playwright/Apify, SSRF); known limitations + upgrade paths; run-locally; requirement→code traceability table
-- [ ] LangSmith screenshot of a real trace — **needs a live run**: set `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY`, run a chat turn, capture the trace from the LangSmith UI. (User action; not reproducible headlessly.)
+- [x] LangSmith screenshots of real traces (`docs/screenshots/langsmith-trace.jpg` — one turn's model→search_chunks→model waterfall + low-trust envelope; `docs/screenshots/langsmith.jpg` — the tracing list with per-turn latency/tokens/cost), embedded in the README alongside the product shots (`chat.jpg`, `library.jpg`)
 - [x] Final audit: every README file/path link resolves (audited — only intra-doc `#anchor` links, which GitHub generates from headings); clean-clone `docker compose up` path verified end-to-end in Phase 6
 
 Verify:
 - [x] `terraform validate` green (Success; aws ~> 5.60)
 - [x] README claim-by-claim audit done (all local links resolve)
-- [~] Full end-to-end criteria: lint/typecheck/test green · demo flow verified via nginx (Phase 6) · `pnpm eval` passes injection & no-evidence · **CI badge blocked** at the GitHub-account level (runner provisioning, not the config) · LangSmith screenshot pending a live run
-- [ ] **Commit**: `feat: terraform aws infrastructure`
+- [x] Full end-to-end criteria met: lint/typecheck/test green · demo flow verified via nginx (Phase 6) and the browser against live models · `pnpm eval` passes injection & no-evidence · CI badge green on GitHub · LangSmith trace screenshots captured
+- [x] **Commit**: `feat: terraform aws infrastructure`
