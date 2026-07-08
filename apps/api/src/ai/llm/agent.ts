@@ -142,11 +142,14 @@ async function streamTurn(
   const order: string[] = [];
 
   for await (const item of stream as AsyncIterable<unknown>) {
-    const chunk = Array.isArray(item) ? item[0] : item;
-    // Real providers stream AIMessageChunk deltas; the offline fakeModel yields
-    // whole AIMessage objects (one per model turn). AIMessageChunk extends
-    // AIMessage, so this covers both — keeping TEST_MODE / e2e streaming honest.
-    if (!(chunk instanceof AIMessage)) continue;
+    const raw = Array.isArray(item) ? item[0] : item;
+    // Identity-independent AI-message check. The streamed AIMessageChunks come
+    // from langgraph's own @langchain/core copy, so `instanceof AIMessage`
+    // (imported from "langchain") is FALSE for them — a duplicate-package
+    // instanceof trap that silently drops every token. getType() is copy-safe
+    // and matches both real chunks and the offline fakeModel's whole messages.
+    if (!isAiMessage(raw)) continue;
+    const chunk = raw;
     const id = chunk.id ?? "message";
 
     if (chunk.usage_metadata) {
@@ -187,4 +190,15 @@ function chunkText(chunk: AIMessage): string {
   if (typeof chunk.content === "string") return chunk.content;
   if (!Array.isArray(chunk.content)) return "";
   return chunk.content.map((b) => (b.type === "text" ? b.text : "")).join("");
+}
+
+/**
+ * True for an AIMessage or AIMessageChunk regardless of which @langchain/core
+ * copy produced it — `getType()` is stable across duplicate package instances,
+ * unlike `instanceof`. Narrows to AIMessage for the accessors we use below.
+ * Exported for the regression test that guards this copy-safe contract.
+ */
+export function isAiMessage(value: unknown): value is AIMessage {
+  const getType = (value as { getType?: () => string } | null)?.getType;
+  return typeof getType === "function" && getType.call(value) === "ai";
 }

@@ -1,8 +1,10 @@
 import type { BaseChatModel } from "@langchain/core/language_models/chat_models";
 import type { StructuredToolInterface } from "@langchain/core/tools";
+import { HumanMessage } from "@langchain/core/messages";
 import { AIMessage, createAgent, fakeModel, tool } from "langchain";
 import { describe, expect, test } from "vitest";
 import { z } from "zod";
+import { isAiMessage } from "./llm/agent.js";
 import { processCitations } from "./postprocess/citations.js";
 import { getPromptSet, type RetrievedEntry } from "./prompt/registry.js";
 import { NO_EVIDENCE, OUT_OF_SCOPE } from "./prompt/templates.js";
@@ -74,6 +76,28 @@ describe("agent flow (scripted fake model)", () => {
       documentTitle: "The Art of War",
       location: "I. Laying Plans",
     });
+  });
+});
+
+describe("isAiMessage (copy-safe streaming filter)", () => {
+  test("recognizes a real AIMessage", () => {
+    expect(isAiMessage(new AIMessage("hi"))).toBe(true);
+  });
+
+  test("recognizes an AI message even when it is NOT instanceof AIMessage", () => {
+    // Simulates langgraph's streamed AIMessageChunk, which comes from a different
+    // @langchain/core copy — `instanceof AIMessage` is false, but getType() is "ai".
+    // This is the exact shape that silently dropped every streamed token.
+    const chunkFromOtherCopy = { getType: () => "ai", content: "token" };
+    expect(chunkFromOtherCopy instanceof AIMessage).toBe(false);
+    expect(isAiMessage(chunkFromOtherCopy)).toBe(true);
+  });
+
+  test("rejects non-AI messages and junk", () => {
+    expect(isAiMessage(new HumanMessage("hi"))).toBe(false);
+    expect(isAiMessage({ getType: () => "human" })).toBe(false);
+    expect(isAiMessage(null)).toBe(false);
+    expect(isAiMessage("nope")).toBe(false);
   });
 });
 
