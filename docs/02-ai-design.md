@@ -118,7 +118,7 @@ search_chunks — tool() with Zod schema { query: string, documentId?: string }
 ## Test mode (offline AI)
 
 - `TEST_MODE=1` flips the `ai/llm/` and `ai/embeddings/` factories to fakes: LangChain `fakeModel()` (scriptable: `.respondWithTools([...]).respond(...)`, records calls for assertions) and the deterministic embedder.
-- Same factory, same pipeline, zero divergence between test and prod paths. The entire composed stack and the Playwright e2e run without any API key.
+- Same factory, same pipeline, zero divergence between test and prod paths. The entire composed stack runs without any API key.
 
 ## Eval suite (`evals/` — built, runs against the LIVE provider)
 

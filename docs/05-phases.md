@@ -117,20 +117,17 @@ Verify:
 - [x] `pnpm eval` (live): 20/23 pass, recall@3 0.90 (≥ 0.80), 0 regressions, 3 documented known-limitations; injection + no-evidence + out-of-scope + extraction all pass. **Live findings**: (1) judging faithfulness against the 600-char UI snippet gave false negatives → judge now sees the full cited chunk; (2) a trialled prompt v2 spelling out cross-search citation numbering regressed no-evidence without fixing comparatives → reverted (regression gate working); (3) `fakeModel` streams whole `AIMessage`s not `AIMessageChunk`s → `streamTurn` handles both (TEST_MODE/e2e streaming honesty)
 - [ ] **Commit**: `feat: test suites, eval harness, seed and API hardening`
 
-## Phase 6 — Docker full stack + e2e + CI + GitHub
-
-Install: @playwright/test 1.61
+## Phase 6 — Docker full stack + CI + GitHub
 
 - [ ] API Dockerfile multi-stage (`node:24-alpine`); web build → nginx with `/api` proxy (buffering off for SSE)
 - [ ] Full compose (db+api+web) + test profile (`TEST_MODE=1`, keyless)
-- [ ] Playwright happy path vs composed test stack: register → upload `The Art of War.txt` → ready → picker → question → cited answer rendered → card visible in /library
 - [ ] GitHub repo **library-chat** + push
-- [ ] `ci.yml`: lint, typecheck, unit+API+component tests, docker builds, `terraform fmt -check` + `validate` (plan if creds), e2e on compose; badge in README. `evals.yml`: workflow_dispatch
+- [ ] `ci.yml`: lint, typecheck, unit+API+component tests, docker builds, `terraform fmt -check` + `validate` (plan if creds); badge in README. `evals.yml`: workflow_dispatch
 
 Verify:
 - [ ] `docker compose up` brings up the entire system locally
-- [ ] e2e green locally and in CI
-- [ ] **Commit**: `feat: dockerized stack, e2e and CI pipeline`
+- [ ] CI green (lint · typecheck · tests · docker builds)
+- [ ] **Commit**: `feat: dockerized stack and CI pipeline`
 
 ## Phase 7 — Terraform + README + costs
 

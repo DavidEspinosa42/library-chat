@@ -28,7 +28,7 @@ books (chosen to stress-test long-document ingestion) plus two extra-format samp
 | Storage | PostgreSQL 17 (`pgvector/pgvector:pg17` image) — the **only** store: users, documents, chunks (+vectors), chat sessions, messages, extractions · Drizzle ORM, **generated** migrations |
 | Queue | In-process `p-queue`, concurrency from env |
 | Frontend | React 19 SPA · Vite 8 · react-router 8 · Tailwind 4 · react-markdown + remark-gfm · custom hooks + `fetch` (no data library) |
-| Tests | vitest 4: AI layer (LangChain `fakeModel()`), API layer (`fastify.inject` + test DB), 3–4 React component tests (testing-library) · Playwright e2e against the composed stack in test mode |
+| Tests | vitest 4: AI layer (LangChain `fakeModel()`), API layer (`fastify.inject` + test DB), React component tests (testing-library) — all offline in test mode |
 | Evals | `evals/` golden set against the live provider · LLM judge · `pnpm eval` → console report + timestamped JSON in `evals/results/` |
 | Infra | docker-compose locally (db · api · web, plus a keyless test profile) · Terraform for AWS: api on ECS Fargate (+ECR, ALB, RDS, Secrets Manager, IAM), web on S3+CloudFront — `validate`/`plan` in CI, **never applied** |
 | Observability | Fastify's pino logger with redaction · LangSmith tracing opt-in purely via env vars |
@@ -93,7 +93,6 @@ Compatibility anchors — do not bump majors without re-checking the notes colum
 | tailwindcss / @tailwindcss/vite | 4.3.2 | Zero-config Vite plugin |
 | react-markdown / remark-gfm | 10.1.0 / 4.0.1 | GFM tables for comparative answers |
 | vitest | 4.1.10 | |
-| @playwright/test | 1.61.1 | |
 | @fastify/rate-limit / swagger / swagger-ui | 11.1 / 9.7 / 6.0 | Per-user limiting · OpenAPI at `/docs` |
 | @testing-library/react / dom · jsdom | 16.3.2 / 10.4.1 · 29.1.1 | Web component tests (dev) |
 | tsx / eslint / pino-pretty | 4.23.0 / 10.6.0 / 13.1.3 | Dev tooling |
@@ -148,6 +147,6 @@ extension+mimetype (pdf/docx/doc/txt/md/html/epub/mobi/srt/vtt, otherwise `415`)
 - **db** — `pgvector/pgvector:pg17`, initialized via Drizzle migrations (plus a separate `test` database for the API test suite).
 - **api** — multi-stage Dockerfile (`node:24-alpine`), runs migrations then serves `/api/v1`.
 - **web** — Vite build served by nginx, proxying `/api` → api container (same-origin: cookies work without CORS gymnastics).
-- **Test profile** — `TEST_MODE=1`: LangChain `fakeModel()` + deterministic fake embeddings; the full stack (and Playwright e2e) runs without any API key.
+- **Test profile** — `TEST_MODE=1`: LangChain `fakeModel()` + deterministic fake embeddings; the full stack runs without any API key.
 
 Dev loop outside docker: `pnpm dev` runs api (tsx watch) + web (vite) against the compose db.

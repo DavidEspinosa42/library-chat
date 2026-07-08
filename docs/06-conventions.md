@@ -36,7 +36,7 @@ Runtime data never crosses into typed code unvalidated:
 ## Tests
 
 - Colocated `*.test.ts` / `*.test.tsx` next to the unit under test.
-- vitest for api/web units; `fastify.inject` for API tests (test DB, `TEST_MODE=1` fakes — no network ever in tests); Playwright only in `e2e/`.
+- vitest for api/web units; `fastify.inject` for API tests (test DB, `TEST_MODE=1` fakes — no network ever in tests).
 - Test names describe behavior (`"strips citation markers that were never retrieved"`), not implementation.
 - AI code is tested through the same factories as production (`fakeModel()`, fake embedder) — no parallel test-only pipelines.
 
