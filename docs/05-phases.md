@@ -129,10 +129,10 @@ Verify:
 - [~] CI: workflows are valid (actionlint clean) and GitHub triggers them, but runner provisioning fails at the account level (even a trivial `echo` job fails with no steps/logs) — GitHub's anti-abuse gate on a fresh account. Unblock: verify a payment method / enable Actions runners on the account, then re-run. The exact `lint · typecheck · tests` gate is green locally.
 - [x] **Commit**: `feat: dockerized stack and CI pipeline`
 
-## Phase 7 — Terraform + README + costs
+## Phase 7 — Terraform + README
 
 - [ ] Terraform: api (ECR, ECS Fargate, ALB, RDS Postgres, Secrets Manager, scoped IAM task role) + web (S3 + CloudFront); `terraform fmt` + `validate` clean (plan in CI if creds) — **never apply**
-- [ ] README (English, the deliverable): architecture + mermaid; 3 AI modules named against requirement 1.2; 5-format ingestion + product pillars; injection defenses; cost & rate-limit controls; config-vs-code; data flow/retention/PII (from `03`); evaluation & regression story (`evals/`, JSON diffing); AWS (key location, rotation, bursty scaling: SSE vs ALB idle timeout, provider rate limits as ceiling, queue depth signal); ECS-vs-EKS-vs-serverless; data-collection build-vs-buy (cheerio/Playwright/Apify, SSRF); cost table 1k/10k/100k (re-verify prices that day; Haiku vs Sonnet column; voyage-context-4 + free tier + caching effect); known limitations + upgrade paths; run-locally; requirement→code traceability table (finalized from `00`)
+- [x] README (English, the deliverable): architecture + mermaid; 3 AI modules named against requirement 1.2; 10-format ingestion + product pillars; injection defenses; cost & rate-limit **controls** (cost table scoped out by request); config-vs-code; data flow/retention/PII (from `03`); evaluation & regression story (`evals/`, JSON diffing); AWS (key location, rotation, bursty scaling: SSE vs ALB idle timeout, provider rate limits as ceiling, queue depth signal); ECS-vs-EKS-vs-serverless; data-collection build-vs-buy (cheerio/Playwright/Apify, SSRF); known limitations + upgrade paths; run-locally; requirement→code traceability table. Note: the AWS/Terraform section references `infra/terraform/` (built in the Terraform step); the final claim-audit reconciles it
 - [ ] LangSmith screenshot of a real trace
 - [ ] Final audit: every README claim points at a real file; clean-clone `docker compose up` following only the README
 

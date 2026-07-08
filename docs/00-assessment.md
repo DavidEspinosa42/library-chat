@@ -185,11 +185,13 @@ Phases refer to `05-phases.md`. "README" items land in Phase 7.
 | 3.2 Dockerize backend (+frontend), deployment target, AI scaling constraints | Multi-stage Dockerfiles + nginx + docker-compose; ECS-vs-EKS-vs-serverless and AI-specific constraints in README — Phases 6–7 |
 | Deliverables: Git repo + README | git repo (Phase D), GitHub push (Phase 6), README with this table finalized (Phase 7) |
 
-## Bonus items — deliberately built (6)
+## Bonus items — deliberately built (5)
 
 - [ ] Streaming AI responses (token-by-token SSE) — Phase 3
 - [ ] Tool/function calling (`search_chunks` via LangChain `tool()` + Zod) — Phase 2
 - [ ] Background async processing (in-process queue + ingestion worker) — Phase 1
-- [ ] Cost estimation for 1k / 10k / 100k requests (README table, verified prices) — Phase 7
 - [ ] Vector store integration (pgvector, exact cosine search) — Phase 0
 - [ ] Embeddings + RAG flow (voyage-context-4 + retrieval tool + agent) — Phases 1–2
+
+> Cost estimation (1k/10k/100k) was scoped out by request — the README documents the
+> cost-**control** mechanisms (rate limits, caching, token caps, model tiering) instead.
