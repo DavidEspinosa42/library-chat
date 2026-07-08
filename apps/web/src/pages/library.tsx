@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { DocumentCard, DocumentDto } from "@library-chat/shared";
 import { ErrorAlert } from "../components/alert.js";
 import { PrimaryButton } from "../components/button.js";
@@ -16,6 +16,7 @@ interface DocumentDetail {
 }
 
 export function LibraryPage() {
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<DocumentDetail | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -103,14 +104,35 @@ export function LibraryPage() {
     }
   }
 
-  async function openDetail(id: string) {
+  function openDetail(id: string) {
+    setSelectedId(id);
     setDetail(null);
-    try {
-      setDetail(await api.get<DocumentDetail>(`/api/v1/documents/${id}`));
-    } catch {
-      // row click is best-effort; list already shows status
-    }
   }
+
+  // The open card is refetched whenever the selected document's live status or
+  // extraction (driven by the polled list) advances — so "Still processing…" is
+  // replaced by the real card once ingestion + analysis finish, without a reopen.
+  const selectedLive = selectedId
+    ? (documents?.find((d) => d.id === selectedId) ?? null)
+    : null;
+  const liveStatus = selectedLive?.status;
+  const liveExtraction = selectedLive?.extractionStatus;
+
+  useEffect(() => {
+    if (!selectedId) return;
+    let ignore = false;
+    api
+      .get<DocumentDetail>(`/api/v1/documents/${selectedId}`)
+      .then((d) => {
+        if (!ignore) setDetail(d);
+      })
+      .catch(() => {
+        // row click is best-effort; the list already shows status
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [selectedId, liveStatus, liveExtraction]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -197,7 +219,7 @@ export function LibraryPage() {
 
         <ul className="flex flex-col gap-2">
           {documents?.map((doc) => {
-            const isOpen = detail?.document.id === doc.id;
+            const isOpen = selectedId === doc.id;
             return (
               <li
                 key={doc.id}
