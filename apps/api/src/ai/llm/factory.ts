@@ -11,6 +11,7 @@ import { env } from "../../config/env.js";
 
 let chatModelPromise: Promise<BaseChatModel> | undefined;
 let extractionModelPromise: Promise<BaseChatModel> | undefined;
+let judgeModelPromise: Promise<BaseChatModel> | undefined;
 
 export function getChatModel(): Promise<BaseChatModel> {
   if (env.TEST_MODE) {
@@ -34,6 +35,16 @@ export function getExtractionModel(): Promise<BaseChatModel> | null {
     maxTokens: env.MAX_TOKENS_EXTRACTION,
   });
   return extractionModelPromise;
+}
+
+/**
+ * Eval judge model (docs/02): Sonnet 5 by default — deliberately stronger than
+ * the judged Haiku to catch subtle faithfulness errors. Only used by `pnpm eval`
+ * (live, keyed); never on the request path, so it has no TEST_MODE fake.
+ */
+export function getJudgeModel(): Promise<BaseChatModel> {
+  judgeModelPromise ??= initChatModel(env.JUDGE_MODEL, { maxTokens: 1024 });
+  return judgeModelPromise;
 }
 
 /**

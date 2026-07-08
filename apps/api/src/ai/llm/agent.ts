@@ -3,7 +3,6 @@ import type { BaseChatModel } from "@langchain/core/language_models/chat_models"
 import type { StructuredToolInterface } from "@langchain/core/tools";
 import {
   AIMessage,
-  AIMessageChunk,
   HumanMessage,
   anthropicPromptCachingMiddleware,
   createAgent,
@@ -111,6 +110,7 @@ export async function runAgentTurn(input: AgentTurnInput): Promise<AgentTurnResu
 function messageText(message: AIMessage | undefined): string {
   if (!message) return "";
   if (typeof message.content === "string") return message.content;
+  if (!Array.isArray(message.content)) return "";
   return message.content
     .map((block) => (block.type === "text" ? block.text : ""))
     .join("");
@@ -143,7 +143,10 @@ async function streamTurn(
 
   for await (const item of stream as AsyncIterable<unknown>) {
     const chunk = Array.isArray(item) ? item[0] : item;
-    if (!(chunk instanceof AIMessageChunk)) continue;
+    // Real providers stream AIMessageChunk deltas; the offline fakeModel yields
+    // whole AIMessage objects (one per model turn). AIMessageChunk extends
+    // AIMessage, so this covers both — keeping TEST_MODE / e2e streaming honest.
+    if (!(chunk instanceof AIMessage)) continue;
     const id = chunk.id ?? "message";
 
     if (chunk.usage_metadata) {
@@ -156,8 +159,11 @@ async function streamTurn(
       });
     }
 
+    // The tool-calling turn carries no answer text for the reader — skip it so
+    // its content never leaks into the streamed answer.
+    const hasToolCalls = Array.isArray(chunk.tool_calls) && chunk.tool_calls.length > 0;
     const delta = chunkText(chunk);
-    if (delta.length === 0) continue;
+    if (delta.length === 0 || hasToolCalls) continue;
     if (!textById.has(id)) {
       textById.set(id, "");
       order.push(id);
@@ -177,7 +183,8 @@ async function streamTurn(
   return { finalText: lastId ? (textById.get(lastId) ?? "") : "", usage };
 }
 
-function chunkText(chunk: AIMessageChunk): string {
+function chunkText(chunk: AIMessage): string {
   if (typeof chunk.content === "string") return chunk.content;
+  if (!Array.isArray(chunk.content)) return "";
   return chunk.content.map((b) => (b.type === "text" ? b.text : "")).join("");
 }

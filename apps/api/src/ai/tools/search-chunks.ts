@@ -1,11 +1,7 @@
-import { and, cosineDistance, eq, inArray } from "drizzle-orm";
 import { tool } from "langchain";
 import { z } from "zod";
-import { env } from "../../config/env.js";
-import { db } from "../../db/client.js";
-import { chunks, documents } from "../../db/schema.js";
-import { getEmbeddings } from "../embeddings/factory.js";
 import type { PromptSet, RetrievedEntry } from "../prompt/registry.js";
+import { retrieveChunks } from "./search-core.js";
 
 export interface SearchContext {
   userId: string;
@@ -27,36 +23,13 @@ export function createSearchChunksTool(ctx: SearchContext) {
     async ({ query, documentId }: { query: string; documentId?: string }) => {
       ctx.onSearch?.(documentId ? { query, documentId } : { query });
 
-      const scope =
-        documentId && ctx.documentIds.includes(documentId)
-          ? [documentId]
-          : ctx.documentIds;
-
-      const queryVector = await getEmbeddings().embedQuery(query);
-
-      const rows = await db
-        .select({
-          chunkId: chunks.id,
-          documentId: chunks.documentId,
-          content: chunks.content,
-          location: chunks.location,
-          documentTitle: documents.title,
-        })
-        .from(chunks)
-        .innerJoin(documents, eq(documents.id, chunks.documentId))
-        .where(and(eq(chunks.userId, ctx.userId), inArray(chunks.documentId, scope)))
-        // Exact cosine scan — no ANN index by design (docs/01).
-        .orderBy(cosineDistance(chunks.embedding, queryVector))
-        .limit(env.RETRIEVAL_TOP_K);
-
-      const entries: RetrievedEntry[] = rows.map((row, i) => ({
-        n: ctx.registry.length + i + 1,
-        chunkId: row.chunkId,
-        documentId: row.documentId,
-        documentTitle: row.documentTitle,
-        location: row.location,
-        content: row.content,
-      }));
+      const entries = await retrieveChunks({
+        userId: ctx.userId,
+        documentIds: ctx.documentIds,
+        query,
+        startN: ctx.registry.length,
+        ...(documentId ? { documentId } : {}),
+      });
       ctx.registry.push(...entries);
 
       return ctx.prompts.formatSearchResults(entries);

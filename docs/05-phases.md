@@ -105,16 +105,16 @@ Verify:
 Install: vitest 4.1 · @fastify/rate-limit · @fastify/swagger + swagger-ui · langsmith ·
 @testing-library/react + jsdom (dev)
 
-- [ ] AI-layer tests (colocated): registry/envelope/templates · parsers (tiny fixtures per format + integration with the 5 real books) · tool shaping · postprocess (invented citations, structured parse/reject) · agent flow with `fakeModel()`
-- [ ] API-layer tests: `fastify.inject` + fakes + test DB — auth flow, submit → status transitions, sessions + chat contract. No network
-- [ ] Web component tests (3–4): citation chip, status badge, SSE client event parser
-- [ ] Seed script: demo user + ingest `seed/` (all 6 — ingest the 4 books first, then the docx, then the srt, so the two samples sit at the top of the library list, which orders by createdAt desc)
-- [ ] `@fastify/rate-limit` keyed by userId; swagger at `/docs` via `jsonSchemaTransform`
-- [ ] `evals/`: golden set per `02` (retrieval-only recall@3 ≥ 0.8, factual per book, cross-book comparatives, no-evidence, out-of-scope, poisoned-book injection, extraction goldens) + judge (Sonnet 5) + `pnpm eval` → console + timestamped JSON in `evals/results/`
+- [x] AI-layer tests (colocated): templates/prompt envelope/postprocess (existing) · chunker (overlap, sentence fallback, section location) · parsers (tiny fixtures per format + integration with all 6 real seed files) · search tool shaping (corpus clamp, per-turn numbering, envelope — over test DB) · extraction parse/reject/clamp/em-dash · agent flow with `fakeModel()`
+- [x] API-layer tests: `fastify.inject` + fakes + test DB — auth flow, submit → status transitions, sessions + chat SSE contract, rate-limit 429 envelope. No network (`test-support/harness.ts`; `vitest.config.ts` + global-setup migrate the test DB)
+- [x] Web component tests: citation chip (popover toggle, one-open, Escape), status badge (3 states), SSE client event parser (split frames, ping comments, pre-stream error)
+- [x] Seed script (`pnpm seed`): demo user + ingest `seed/` (4 books, then docx, then srt, so the samples sit at the top of the createdAt-desc list); real pipeline, honours TEST_MODE; demo creds in `env.ts` + `.env.example`
+- [x] `@fastify/rate-limit` keyed by userId (IP fallback) → `RATE_LIMITED` envelope; swagger at `/docs` via `jsonSchemaTransform`
+- [x] `evals/` (workspace package): golden set per `02` (retrieval-only recall@3, factual per book, cross-book comparatives, no-evidence, out-of-scope, poisoned-book injection, extraction goldens) + judge (Sonnet 5, faithfulness over the FULL cited chunks) + `pnpm eval` → console + timestamped JSON in `evals/results/`. Gates on regressions + recall; documented known-limitations (deception chunk-boundary, comparative cross-search citation attribution) are tracked, not gated
 
 Verify:
-- [ ] `pnpm test` green (api + web)
-- [ ] `pnpm eval` runs against live provider and reports (manual, needs keys)
+- [x] `pnpm lint && pnpm typecheck && pnpm test` green (72 tests: 61 api + 11 web)
+- [x] `pnpm eval` (live): 20/23 pass, recall@3 0.90 (≥ 0.80), 0 regressions, 3 documented known-limitations; injection + no-evidence + out-of-scope + extraction all pass. **Live findings**: (1) judging faithfulness against the 600-char UI snippet gave false negatives → judge now sees the full cited chunk; (2) a trialled prompt v2 spelling out cross-search citation numbering regressed no-evidence without fixing comparatives → reverted (regression gate working); (3) `fakeModel` streams whole `AIMessage`s not `AIMessageChunk`s → `streamTurn` handles both (TEST_MODE/e2e streaming honesty)
 - [ ] **Commit**: `feat: test suites, eval harness, seed and API hardening`
 
 ## Phase 6 — Docker full stack + e2e + CI + GitHub

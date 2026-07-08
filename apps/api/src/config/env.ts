@@ -55,6 +55,10 @@ const envSchema = z
 
     RATE_LIMIT_MAX: z.coerce.number().int().default(30),
     RATE_LIMIT_WINDOW: z.string().default("1 minute"),
+
+    // Demo account created by the seed script (pnpm seed) — dev convenience only.
+    DEMO_EMAIL: z.email().default("demo@library-chat.dev"),
+    DEMO_PASSWORD: z.string().min(8).default("demo-password"),
   })
   .superRefine((cfg, ctx) => {
     if (!cfg.TEST_MODE) {

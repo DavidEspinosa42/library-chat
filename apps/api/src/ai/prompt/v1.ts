@@ -85,6 +85,35 @@ Respond with ONLY a JSON object — no markdown fences, no commentary — with e
 }`;
   },
 
+  /**
+   * Eval judge prompt (docs/02): faithfulness only. The judge sees the question,
+   * the answer, and the exact chunks the answer cited — never the whole corpus,
+   * so it grades grounding, not world knowledge. Binary verdict + one reason.
+   */
+  buildJudgePrompt(question: string, answer: string, citedChunks: string[]): string {
+    const evidence =
+      citedChunks.length > 0
+        ? citedChunks.map((c, i) => `[${i + 1}] ${c}`).join("\n\n")
+        : "(the answer cited no sources)";
+    return `You are grading whether an AI answer is faithful to its cited sources.
+
+Question:
+${question}
+
+Answer under review:
+${answer}
+
+The exact source passages the answer cited:
+${evidence}
+
+Grade on two checks only:
+(a) Is every factual claim in the answer supported by the cited passages?
+(b) Are there claims that need a source but have none?
+
+Respond with ONLY a JSON object, no commentary:
+{ "faithful": boolean, "reason": string }   // reason: one short sentence`;
+  },
+
   templates: { NO_EVIDENCE, OUT_OF_SCOPE },
 };
 

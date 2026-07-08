@@ -86,6 +86,14 @@ async function extractCard(excerpt: string, fallbackTitle: string): Promise<Docu
       ? response.content
       : response.content.map((b) => (b.type === "text" ? b.text : "")).join("");
 
+  return parseExtractionCard(text, fallbackTitle);
+}
+
+/**
+ * Parse + validate a model response into a DocumentCard (pure — unit-tested).
+ * LLM-overflowable maxima are clamped by the schema; hard shape violations throw.
+ */
+export function parseExtractionCard(text: string, fallbackTitle: string): DocumentCard {
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end <= start) {

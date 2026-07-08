@@ -54,6 +54,8 @@ books (chosen to stress-test long-document ingestion) plus two extra-format samp
 │  │  ├─ extraction/               # document card + starter questions
 │  │  └─ embeddings/               # voyage-context-4 adapter + test fakes
 │  ├─ ingestion/                   # queue, worker, chunker, parsers/{pdf,docx,doc,text,html,epub,mobi,subtitles}
+│  ├─ scripts/seed.ts              # demo user + seed/ corpus (pnpm seed)
+│  ├─ test-support/                # API-test harness (inject + cookie auth + ingestion poller)
 │  └─ {app.ts, server.ts}
 ├─ apps/web/src/{pages/(login,library,chat), components, lib/(api.ts, sse.ts)}
 ├─ packages/shared/src/            # Zod schemas for API contracts + SSE event types
@@ -92,6 +94,8 @@ Compatibility anchors — do not bump majors without re-checking the notes colum
 | react-markdown / remark-gfm | 10.1.0 / 4.0.1 | GFM tables for comparative answers |
 | vitest | 4.1.10 | |
 | @playwright/test | 1.61.1 | |
+| @fastify/rate-limit / swagger / swagger-ui | 11.1 / 9.7 / 6.0 | Per-user limiting · OpenAPI at `/docs` |
+| @testing-library/react / dom · jsdom | 16.3.2 / 10.4.1 · 29.1.1 | Web component tests (dev) |
 | tsx / eslint / pino-pretty | 4.23.0 / 10.6.0 / 13.1.3 | Dev tooling |
 | langsmith | 0.7.16 | Tracing activates via `LANGSMITH_*` env only |
 

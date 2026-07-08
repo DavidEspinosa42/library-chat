@@ -3,9 +3,13 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import jwt from "@fastify/jwt";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
 import Fastify, { type FastifyError, type FastifyRequest } from "fastify";
 import {
   hasZodFastifySchemaValidationErrors,
+  jsonSchemaTransform,
   serializerCompiler,
   validatorCompiler,
   type ZodTypeProvider,
@@ -51,6 +55,41 @@ export async function buildApp() {
       fields: 5,
     },
   });
+
+  // Per-user rate limiting (docs/04): authenticated traffic is keyed by userId
+  // so one user cannot exhaust another's budget; anonymous traffic (login,
+  // register) falls back to the client IP — brute-force protection for free.
+  await app.register(rateLimit, {
+    max: env.RATE_LIMIT_MAX,
+    timeWindow: env.RATE_LIMIT_WINDOW,
+    keyGenerator: async (req: FastifyRequest) => {
+      try {
+        const payload = await req.jwtVerify<{ sub: string }>();
+        return `user:${payload.sub}`;
+      } catch {
+        return `ip:${req.ip}`;
+      }
+    },
+    allowList: (req) => req.url === "/healthz" || req.url.startsWith("/docs"),
+    // The plugin throws this return value — an AppError rides the global
+    // error handler into the standard envelope with status 429.
+    errorResponseBuilder: (_req, context) =>
+      new AppError("RATE_LIMITED", `Rate limit exceeded. Try again in ${context.after}.`),
+  });
+
+  // OpenAPI spec generated from the Zod route schemas (docs/04).
+  await app.register(swagger, {
+    openapi: {
+      info: {
+        title: "library-chat API",
+        description:
+          "Multi-source document analyst: upload documents, chat over selected sources with validated citations.",
+        version: "1.0.0",
+      },
+    },
+    transform: jsonSchemaTransform,
+  });
+  await app.register(swaggerUi, { routePrefix: "/docs" });
 
   app.decorate("authenticate", async (req: FastifyRequest) => {
     try {
